@@ -1,0 +1,9 @@
+{
+  "appId": "com.vocalforlocal.adilabad",
+  "appName": "VocalForLocal",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
