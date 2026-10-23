@@ -370,7 +370,7 @@ export default function App() {
     setCategoryCarts({ ...categoryCarts, [catId]: updated });
   };
 
-  const handlePlaceCategoryOrder = (catId) => {
+const handlePlaceCategoryOrder = async (catId) => {
     const currentCart = categoryCarts[catId] || [];
     if (currentCart.length === 0) return;
 
@@ -378,7 +378,26 @@ export default function App() {
     const itemsTotal = currentCart.reduce((s, i) => s + i.price * i.qty, 0);
     const { vehicle, deliveryFee } = calculateLogistics(totalWeightGrams, mapModal.distanceKm, 0, 0);
     const gst = Number(((itemsTotal + deliveryFee) * 0.05).toFixed(2));
+    const grandTotal = Number((itemsTotal + deliveryFee + gst).toFixed(2));
     const secretOtp = String(Math.floor(1000 + Math.random() * 9000));
+
+    // Send trial order data to your Vercel Serverless API endpoint
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: currentUser?.name || (isPrimeCustomer ? 'Anvesh (👑 Prime)' : 'Neighbor #101'),
+          items: currentCart,
+          totalAmount: grandTotal,
+          deliveryAddress: mapModal.addressLabel
+        })
+      });
+      const data = await response.json();
+      console.log('API Order Submission Result:', data);
+    } catch (err) {
+      console.warn('API route not reached, running in offline fallback mode:', err);
+    }
 
     const newOrder = {
       id: `VFL-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -395,7 +414,7 @@ export default function App() {
       laborFee: 0,
       deliveryFee,
       gst,
-      grandTotal: Number((itemsTotal + deliveryFee + gst).toFixed(2)),
+      grandTotal,
       status: 'ORDER_PLACED_MERCHANT_POPUP',
       tokenHandedOver: false,
       secretOtp
