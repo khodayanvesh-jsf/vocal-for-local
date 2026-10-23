@@ -2145,243 +2145,300 @@ export default function App() {
   // ==========================================================================
   // [SECTION-08] PORTAL 2 — MERCHANT & DECORATOR PARTNER APP UI
   // ==========================================================================
-  const renderMerchantPortal = () => (
-    <MobilePhoneShell title="🏪 VocalForLocal Merchant" badge="4h Ledger">
-      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-        <div>
-          <h2 className="text-xs font-black text-emerald-400">Store & Partner Desk</h2>
-          <p className="text-[10px] text-slate-400">Doorstep OTP Masked (****)</p>
-        </div>
-        <div className="flex gap-1.5">
-          {/* Allows Merchant/Decorator to shop for personal needs without leaving their account */}
-          <button
-            onClick={() => setActivePortal('customer')}
-            className="bg-slate-800 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-xl text-[9px] font-bold"
-          >
-            🛍️ Personal Shop
-          </button>
-          <button
-            onClick={handleCreateConcurrentNewOrder}
-            className="bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-xl text-[10px] font-extrabold"
-          >
-            + Simulate Order
-          </button>
-        </div>
-      </div>
+    const renderMerchantPortal = () => {
+    // Local tab state inside the merchant portal
+    const [merchantTab, setMerchantTab] = useState('orders'); // 'orders' | 'stock' | 'bids'
+    const [stockItems, setStockItems] = useState([
+      { id: 'st_1', name: 'Swastick Turmeric Powder', category: 'daily_needs', price: 50, unit: '250gms', inStock: true },
+      { id: 'st_2', name: 'Swastick Turmeric Powder', category: 'daily_needs', price: 100, unit: '500gms', inStock: true },
+      { id: 'st_3', name: 'Amul Fresh Milk', category: 'daily_needs', price: 28, unit: '500ml', inStock: false } // Out of stock example
+    ]);
+    const [serviceAvailability, setServiceAvailability] = useState({
+      marrageDecor: true,
+      haldiStage: true,
+      djLighting: false
+    });
+    const [myBidAmount, setMyBidAmount] = useState('');
+    const [myBidReason, setMyBidReason] = useState('');
 
-      {/* Incoming Store Orders Queue */}
-      <div className="space-y-2">
-        {orders.length === 0 ? (
-          <p className="text-[11px] text-slate-400 text-center py-4">
-            No active orders yet. Tap "+ Simulate Order" or place one from the Consumer App.
-          </p>
-        ) : (
-          orders.map((ord) => (
-            <div key={ord.id} className="bg-slate-900 p-2.5 rounded-2xl border border-emerald-500/40 text-[11px] space-y-1.5">
-              <div className="flex justify-between">
-                <span className="font-bold text-emerald-300">{ord.id}</span>
-                <span className="text-[9px] text-amber-400">OTP: ****</span>
-              </div>
-              <p className="text-[10px] text-slate-300">
-                {ord.items.map((i) => `${i.name} x${i.qty}`).join(', ')}
+    return (
+      <MobilePhoneShell title="🏪 VocalForLocal Partner" badge="Merchant Desk">
+        {/* Top Header & Personal Shopping Shortcut */}
+        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+          <div>
+            <h2 className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+              {currentUser?.fullName || 'Sri Laxmi Supermart'}
+            </h2>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">
+              Role: {(currentUser?.role || 'merchant').replace('_', ' ')}
+            </p>
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setActivePortal('customer')}
+              className="bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 px-2.5 py-1 rounded-xl text-[9px] font-bold cursor-pointer"
+            >
+              🛍️ Personal Shop
+            </button>
+          </div>
+        </div>
+
+        {/* Merchant Portal Navigation Tabs */}
+        <div className="grid grid-cols-3 gap-1 text-[10px] bg-slate-200 dark:bg-slate-900 p-1 rounded-xl">
+          <button
+            onClick={() => setMerchantTab('orders')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'orders'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            📦 Orders
+          </button>
+          <button
+            onClick={() => setMerchantTab('stock')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'stock'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            📋 Stock / Services
+          </button>
+          <button
+            onClick={() => setMerchantTab('bids')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'bids'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            🌸 Bidding Desk
+          </button>
+        </div>
+
+        {/* ======================================================== */}
+        {/* TAB 1: CURRENT ORDERS / APPOINTMENTS LIST                */}
+        {/* ======================================================== */}
+        {merchantTab === 'orders' && (
+          <div className="space-y-2.5">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white">Active Customer Orders</h3>
+              <button
+                onClick={handleCreateConcurrentNewOrder}
+                className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-xl text-[9px] font-extrabold cursor-pointer"
+              >
+                + Simulate Incoming Order
+              </button>
+            </div>
+
+            {orders.length === 0 ? (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center py-6">
+                No active orders right now. Standing by for customer checkout.
               </p>
-
-              {ord.status === 'ORDER_PLACED_MERCHANT_POPUP' && (
-                <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div>
-                      <label className="text-[9px] text-slate-400">Heavy Transport (0)</label>
-                      <input
-                        type="number"
-                        defaultValue={0}
-                        onChange={(e) => (ord.heavyTransportFee = Number(e.target.value))}
-                        className="w-full bg-[#061014] border border-slate-700 rounded-lg p-1 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-slate-400">Labor Fee (0)</label>
-                      <input
-                        type="number"
-                        defaultValue={0}
-                        onChange={(e) => (ord.laborFee = Number(e.target.value))}
-                        className="w-full bg-[#061014] border border-slate-700 rounded-lg p-1 text-white"
-                      />
-                    </div>
+            ) : (
+              orders.map((ord) => (
+                <div
+                  key={ord.id}
+                  className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-[11px] space-y-2 shadow-sm"
+                >
+                  <div className="flex justify-between font-bold">
+                    <span className="text-emerald-600 dark:text-emerald-400">{ord.id}</span>
+                    <span className="text-slate-600 dark:text-slate-300">Total: ₹{ord.grandTotal}</span>
                   </div>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
+                    <strong>Customer:</strong> {ord.customerName} | <strong>Delivery:</strong> {ord.address}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {ord.items.map((i) => `${i.name} x${i.qty}`).join(', ')}
+                  </p>
+
+                  {ord.status === 'ORDER_PLACED_MERCHANT_POPUP' && (
+                    <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+                      <div className="grid grid-cols-2 gap-1.5 text-slate-800 dark:text-white">
+                        <div>
+                          <label className="text-[9px] text-slate-500">Heavy Transport (₹)</label>
+                          <input
+                            type="number"
+                            defaultValue={0}
+                            onChange={(e) => (ord.heavyTransportFee = Number(e.target.value))}
+                            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500">Labor Fee (₹)</label>
+                          <input
+                            type="number"
+                            defaultValue={0}
+                            onChange={(e) => (ord.laborFee = Number(e.target.value))}
+                            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleMerchantConfirmBill(ord.id, ord.heavyTransportFee, ord.laborFee)}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer"
+                      >
+                        ✓ Verify Stock & Send Final Bill to Customer
+                      </button>
+                    </div>
+                  )}
+
+                  {ord.status === 'PAYMENT_DONE_PACKING_STARTED' && (
+                    <button
+                      onClick={() => handleMerchantDispatchAlert(ord.id)}
+                      className="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer"
+                    >
+                      📦 Packed & Ready ➔ Alert Rider
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 2: STOCK & PRODUCT INVENTORY MANUAL                 */}
+        {/* ======================================================== */}
+        {merchantTab === 'stock' && (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white">Stock & Inventory Manual</h3>
+              <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                Live Sync
+              </span>
+            </div>
+
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Toggle items out of stock to instantly hide them from consumers across Adilabad.
+            </p>
+
+            <div className="space-y-2">
+              {stockItems.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      ₹{item.price} / {item.unit}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const updated = [...stockItems];
+                        updated[idx].inStock = !updated[idx].inStock;
+                        setStockItems(updated);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${
+                        item.inStock
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-400'
+                          : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-400'
+                      }`}
+                    >
+                      {item.inStock ? '✓ In Stock' : '✕ Out of Stock'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Service Provider Toggles (Rule 9) */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-2">
+              <h4 className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                🎉 Service Provider Availability Toggles
+              </h4>
+              {Object.entries(serviceAvailability).map(([key, val]) => (
+                <div key={key} className="flex justify-between items-center text-xs">
+                  <span className="capitalize text-slate-700 dark:text-slate-300">
+                    {key.replace(/([A-Z])/g, ' $1')}
+                  </span>
                   <button
-                    onClick={() => handleMerchantConfirmBill(ord.id, ord.heavyTransportFee, ord.laborFee)}
-                    className="w-full bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl"
+                    onClick={() =>
+                      setServiceAvailability({ ...serviceAvailability, [key]: !val })
+                    }
+                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${
+                      val ? 'bg-emerald-500 text-slate-950' : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white'
+                    }`}
                   >
-                    ✓ Confirm Stock & Push Final Bill
+                    {val ? 'ON (Available)' : 'OFF (Paused)'}
                   </button>
                 </div>
-              )}
-
-              {ord.status === 'PAYMENT_DONE_PACKING_STARTED' && (
-                <button
-                  onClick={() => handleMerchantDispatchAlert(ord.id)}
-                  className="w-full bg-amber-400 text-slate-950 font-black py-1.5 rounded-xl"
-                >
-                  📦 Packed ➔ Alert Rider (5-10m SLA)
-                </button>
-              )}
+              ))}
             </div>
-          ))
+          </div>
         )}
-      </div>
 
-      {/* Decorator & Function Hall Bidding Desk */}
-      {(biddingStatus !== 'IDLE' || hallBookingState) && (
-        <div className="bg-teal-950/60 border border-teal-400/50 p-2.5 rounded-2xl text-[10px] space-y-2">
-          <h3 className="font-bold text-teal-200">🎉 Event & Decor Bidding Desk</h3>
-          {hallBookingState && hallBookingState.status === 'AWAITING_HALL_CONFIRMATION' && (
-            <button
-              onClick={() => setHallBookingState({ ...hallBookingState, status: 'HALL_CONFIRMED_PAY_ADVANCE' })}
-              className="w-full bg-emerald-400 text-slate-950 font-bold py-1.5 rounded-xl"
-            >
-              Confirm Hall Slot ({eventDate})
-            </button>
-          )}
-          {biddingStatus === 'BROADCASTED' && (
-            <div className="space-y-1.5">
-              <input
-                type="number"
-                value={merchantBidForm.price}
-                onChange={(e) => setMerchantBidForm({ ...merchantBidForm, price: Number(e.target.value) })}
-                className="w-full bg-[#061014] border border-slate-700 rounded-lg p-1 text-white"
-              />
+        {/* ======================================================== */}
+        {/* TAB 3: ANONYMOUS DECORATION REVERSE-BIDDING DESK          */}
+        {/* ======================================================== */}
+        {merchantTab === 'bids' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-white">🌸 Live Event Reverse-Bidding Desk</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Submit competitive Indian Rupee bids and pricing justifications. Identities remain masked until the 35% advance escrow is paid.
+            </p>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-2.5">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-slate-700 dark:text-slate-300">Active Request: Royal Wedding Setup</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Est Budget: ₹25,000</span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-0.5">BID AMOUNT (INDR. CURRENCY - NUMERIC ONLY)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 21500"
+                  value={myBidAmount}
+                  onChange={(e) => setMyBidAmount(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-0.5">PRICING RATIONALE / INCLUSIONS</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Includes welcome flower arch and 4 LED warm spotlights..."
+                  value={myBidReason}
+                  onChange={(e) => setMyBidReason(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-white"
+                />
+              </div>
+
               <button
-                onClick={() =>
+                type="button"
+                onClick={() => {
+                  if (!myBidAmount || isNaN(myBidAmount)) {
+                    alert('Please enter a valid numeric value for your bid.');
+                    return;
+                  }
                   setDecorBids([
                     ...decorBids,
                     {
                       id: `bid_${Date.now()}`,
-                      maskedVendor: 'Decorator Partner #B2',
-                      price: merchantBidForm.price,
-                      features: merchantBidForm.notes
+                      maskedVendor: 'Verified Partner (You)',
+                      price: Number(myBidAmount),
+                      features: myBidReason || 'Standard package inclusions'
                     }
-                  ])
-                }
-                className="w-full bg-emerald-400 text-slate-950 font-bold py-1 rounded-lg"
+                  ]);
+                  setBiddingStatus('BROADCASTED');
+                  alert('✅ Competitive bid broadcasted anonymously to consumer!');
+                }}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2 rounded-xl text-xs shadow cursor-pointer"
               >
-                Submit Competing Quote
+                Submit Anonymous Bid ➔
               </button>
             </div>
-          )}
-          {biddingStatus === 'BID_ACCEPTED_AWAITING_MERCHANT' && (
-            <button
-              onClick={() => setBiddingStatus('DEAL_FINALIZED_PAYMENT_DUE')}
-              className="w-full bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl"
-            >
-              ✓ Confirm Deal & Raise {advancePercentage}% Escrow Popup
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Submit New Product Sub-Category to Founder Admin */}
-      <div className="bg-slate-900 p-2.5 rounded-2xl border border-slate-800 text-[10px] space-y-1.5">
-        <h3 className="font-bold text-emerald-400">➕ Add New Local Product</h3>
-        <input
-          type="text"
-          placeholder="Brand Name (e.g. Fortune Sunflower Oil)"
-          value={newProdForm.subCategoryBrand}
-          onChange={(e) => setNewProdForm({ ...newProdForm, subCategoryBrand: e.target.value })}
-          className="w-full bg-[#061014] border border-slate-700 rounded-xl p-1.5 text-white"
-        />
-        <button
-          onClick={() => {
-            if (!newProdForm.subCategoryBrand) return;
-            setPendingSubCategories([
-              ...pendingSubCategories,
-              {
-                id: `ps_${Date.now()}`,
-                categoryId: newProdForm.categoryId,
-                subCategoryBrand: newProdForm.subCategoryBrand,
-                shopName: newProdForm.shopName,
-                distanceKm: 1.1,
-                rating: 4.8,
-                buyersToday: 18,
-                curiosityTag: '🆕 New Local Arrival',
-                image: newProdForm.image,
-                status: 'pending',
-                variants: newProdForm.variants.map((v, idx) => ({ ...v, id: `v_${Date.now()}_${idx}` }))
-              }
-            ]);
-            setNewProdForm({ ...newProdForm, subCategoryBrand: '' });
-            alert('Submitted to Founder Admin for Approval!');
-          }}
-          className="w-full bg-emerald-400 text-slate-950 font-bold py-1.5 rounded-xl"
-        >
-          Submit to Founder Admin
-        </button>
-      </div>
-    </MobilePhoneShell>
-  );
-
-  // ==========================================================================
-  // [SECTION-09] PORTAL 3 — DELIVERY AGENT / BIKE & AUTO CAPTAIN APP UI
-  // ==========================================================================
-  const renderRiderPortal = () => (
-    <MobilePhoneShell title="🛵 VocalForLocal Captain" badge="GPS Live">
-      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-        <div>
-          <h2 className="text-xs font-black text-emerald-400">Delivery & Bike Taxi Radar</h2>
-          <p className="text-[10px] text-slate-400">OTP Masked Until Consumer Doorstep</p>
-        </div>
-        {/* Allows Delivery Agent to shop for personal items using their login */}
-        <button
-          onClick={() => setActivePortal('customer')}
-          className="bg-slate-800 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl text-[9px] font-bold"
-        >
-          🛍️ Personal Shop
-        </button>
-      </div>
-
-      {orders.length === 0 ? (
-        <p className="text-[11px] text-slate-400 py-8 text-center">No active dispatches. Standing by in Adilabad.</p>
-      ) : (
-        orders.map((ord) => (
-          <div key={ord.id} className="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-[11px] space-y-2">
-            <div className="flex justify-between font-bold">
-              <span className="text-emerald-400">{ord.id}</span>
-              <span>{ord.vehicle.slice(0, 18)}</span>
-            </div>
-            <p className="text-[10px] text-slate-300">Drop: {ord.address}</p>
-            <p className="text-[10px] text-amber-400 font-bold">Consumer OTP: **** (Hidden)</p>
-
-            {ord.status === 'READY_FOR_PICKUP_AGENT_ALERTED' && (
-              <button
-                onClick={() => handleRiderAcceptPickupToken(ord.id)}
-                className="w-full bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl"
-              >
-                🎟️ Accept Pickup Token (Locks Order)
-              </button>
-            )}
-
-            {ord.status === 'OUT_FOR_DELIVERY_LIVE_MAP' && (
-              <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                <input
-                  type="text"
-                  placeholder="Enter 4-Digit Consumer OTP"
-                  value={riderOtpInput}
-                  onChange={(e) => setRiderOtpInput(e.target.value)}
-                  className="w-full bg-[#061014] border border-slate-700 rounded-xl p-1.5 text-white font-mono"
-                />
-                <button
-                  onClick={() => handleVerifyDeliveryOtp(ord.id)}
-                  className="w-full bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl"
-                >
-                  ✓ Verify OTP & Complete Delivery
-                </button>
-              </div>
-            )}
           </div>
-        ))
-      )}
-    </MobilePhoneShell>
-  );
-
+        )}
+      </MobilePhoneShell>
+    );
+  };
   // ==========================================================================
   // [SECTION-10] PORTAL 4 — DESKTOP FOUNDER ADMIN WEB SUITE & TESTING BENCH
   // ==========================================================================
