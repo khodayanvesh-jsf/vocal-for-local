@@ -36,7 +36,12 @@ function MobilePhoneShell({ title, badge, children }) {
 }
 
 export default function App() {
-// --- CREDENTIALS & ONBOARDING DATABASE ENGINE ---
+  // --- FOUNDER CONSOLE & TESTING BENCH STATE ---
+  const [viewMode, setViewMode] = useState('mobile_app');
+  const [founderTab, setFounderTab] = useState('approvals');
+  const [testSimulatedOrderCount, setTestSimulatedOrderCount] = useState(0);
+
+  // --- CREDENTIALS & ONBOARDING DATABASE ENGINE ---
   const savedDeviceUser = JSON.parse(localStorage.getItem('vfl_device_registered_user') || 'null');
   const [hasRegisteredOnDevice, setHasRegisteredOnDevice] = useState(!!savedDeviceUser);
 
@@ -50,7 +55,7 @@ export default function App() {
     storage: true
   });
 
-  // Simulated Local Database (Preserved in browser storage)
+  // Simulated Database Registry
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     const localDb = localStorage.getItem('vfl_registered_users_db');
     if (localDb) return JSON.parse(localDb);
@@ -60,7 +65,7 @@ export default function App() {
         fullName: 'Khoday Anvesh',
         username: 'anvesh_k',
         phone: '9848011223',
-        govId: '999988887777',
+        govId: 'ID_VERIFIED_PROOF',
         role: 'customer',
         passwordHash: 'Adilabad@2026',
         fastPin: '1990',
@@ -96,8 +101,6 @@ export default function App() {
 
   // Active Portal View
   const [activePortal, setActivePortal] = useState('customer');
-  const [isPrimeCustomer, setIsPrimeCustomer] = useState(true);
-
   // Curiosity & Peace-of-Mind Discovery State
   const [searchQuery, setSearchQuery] = useState('');
   const [surpriseBoxOpen, setSurpriseBoxOpen] = useState(false);
@@ -2134,6 +2137,341 @@ const handlePlaceCategoryOrder = async (catId) => {
   );
 
   // 4. FOUNDER ADMIN PORTAL
+  // --- DEDICATED DESKTOP FOUNDER WEB DASHBOARD ---
+  const renderAdminWebDashboard = () => (
+    <div className="min-h-screen bg-[#040c10] text-slate-100 flex flex-col font-sans">
+      {/* Top Founder Navigation Header */}
+      <header className="bg-slate-900/90 border-b border-emerald-950 px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20">
+            🌿
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold text-white tracking-wide">VocalForLocal Founder Control Suite</h1>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                Adilabad Master Admin
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">Background KYC, Sub-Category Moderation & Testing Bench</p>
+          </div>
+        </div>
+
+        {/* Action Controls & Mode Switcher */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setViewMode('mobile_app')}
+            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition"
+          >
+            📱 Return to Clean Mobile App
+          </button>
+        </div>
+      </header>
+
+      {/* Main Dashboard Layout */}
+      <div className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Navigation Sidebar */}
+        <aside className="space-y-2">
+          {[
+            { id: 'approvals', label: '🛡️ Approvals & Verifications', count: pendingMerchants.length + pendingSubCategories.length },
+            { id: 'testing', label: '🧪 Temporary Testing Bench', count: 'Live' },
+            { id: 'users', label: '👥 Registered Citizens Database', count: registeredUsers.length },
+            { id: 'escrow', label: '💰 Escrow & Commissions', count: `${merchantCommissionPct}% / ${consumerFeePct}%` }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFounderTab(tab.id)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition border ${
+                founderTab === tab.id
+                  ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300 shadow-md'
+                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700">
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </aside>
+
+        {/* Right Content View */}
+        <main className="lg:col-span-3 space-y-6">
+          {/* TAB 1: BACKGROUND AUTHENTICATIONS & MODERATION */}
+          {founderTab === 'approvals' && (
+            <div className="space-y-6">
+              {/* Pending Merchants & KYC */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-sm font-bold text-emerald-400">Merchant & Service Provider Onboarding Queue</h2>
+                    <p className="text-xs text-slate-400">E-Signed SLA and Adilabad premises verification</p>
+                  </div>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
+                    {pendingMerchants.length} Pending
+                  </span>
+                </div>
+
+                {pendingMerchants.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-3 text-center">No merchants waiting in queue.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {pendingMerchants.map((pm) => (
+                      <div key={pm.id} className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-3">
+                        <div>
+                          <p className="text-sm font-extrabold text-white">{pm.businessName}</p>
+                          <p className="text-xs text-slate-400">Phone: {pm.phone} • Category: <strong className="text-emerald-300 uppercase">{pm.categoryId}</strong></p>
+                          <span className="inline-block text-[9px] bg-teal-950 text-teal-300 border border-teal-800 px-2 py-0.5 rounded mt-1">
+                            ✓ Digital E-Sign Recorded
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id));
+                              alert(`Approved merchant: ${pm.businessName}`);
+                            }}
+                            className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow"
+                          >
+                            ✓ Approve Merchant
+                          </button>
+                          <button
+                            onClick={() => setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id))}
+                            className="bg-rose-950 hover:bg-rose-900 border border-rose-700 text-rose-300 font-bold text-xs px-3 py-2 rounded-xl"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pending Brand Sub-Categories Moderation */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-sm font-bold text-emerald-400">Brand Sub-Categories & Product Approvals</h2>
+                    <p className="text-xs text-slate-400">Quality check images, town MRP guidelines, and packaging units</p>
+                  </div>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
+                    {pendingSubCategories.length} In Review
+                  </span>
+                </div>
+
+                {pendingSubCategories.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-3 text-center">All product listings approved and live.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {pendingSubCategories.map((item) => (
+                      <div key={item.id} className="bg-[#061014] border border-slate-800 rounded-2xl p-3.5 space-y-2">
+                        <div className="flex gap-3">
+                          <img src={item.image} alt={item.subCategoryBrand} className="w-14 h-14 rounded-xl object-cover border border-slate-700" />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xs font-bold text-white truncate">{item.subCategoryBrand}</h3>
+                            <p className="text-[10px] text-emerald-400">{item.shopName}</p>
+                            <p className="text-[10px] text-slate-400">{item.variants.length} packaging variants listed</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-1 border-t border-slate-800/80">
+                          <button
+                            onClick={() => {
+                              setProducts([...products, { ...item, status: 'approved' }]);
+                              setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id));
+                            }}
+                            className="flex-1 bg-emerald-500 text-slate-950 font-bold py-1.5 rounded-lg text-xs"
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            onClick={() => setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id))}
+                            className="flex-1 bg-rose-900/60 border border-rose-700 text-rose-300 font-bold py-1.5 rounded-lg text-xs"
+                          >
+                            ✕ Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: TEMPORARY TESTING MODULE */}
+          {founderTab === 'testing' && (
+            <div className="bg-slate-900/80 border border-emerald-500/40 rounded-3xl p-6 space-y-6">
+              <div>
+                <h2 className="text-base font-extrabold text-emerald-400">🧪 Developer & Founder Sandbox Simulator</h2>
+                <p className="text-xs text-slate-300">
+                  Quickly switch between user personas, test live orders, and inspect mobile screens side-by-side during active development.
+                </p>
+              </div>
+
+              {/* 1-Click Role Jump Test */}
+              <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 space-y-3">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Simulate Device Login As:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { role: 'customer', name: 'Khoday Anvesh', label: '🛍️ Customer View' },
+                    { role: 'merchant', name: 'Sri Laxmi Supermart', label: '🏪 Merchant View' },
+                    { role: 'service_provider', name: 'Royal Decorators', label: '🎉 Decorator View' },
+                    { role: 'delivery_agent', name: 'Raju (Bike Captain)', label: '🛵 Rider View' }
+                  ].map((sim) => (
+                    <button
+                      key={sim.role}
+                      onClick={() => {
+                        const mockUser = { id: `mock_${sim.role}`, fullName: sim.name, username: sim.role, role: sim.role, phone: '9848011223' };
+                        setCurrentUser(mockUser);
+                        setSelectedRole(sim.role);
+                        setActivePortal(sim.role === 'customer' ? 'customer' : sim.role === 'service_provider' ? 'merchant' : sim.role === 'delivery_agent' ? 'rider' : 'merchant');
+                        setOnboardingStep('app');
+                        setViewMode('mobile_app');
+                      }}
+                      className="p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl text-left transition"
+                    >
+                      <p className="text-xs font-extrabold text-emerald-300">{sim.label}</p>
+                      <p className="text-[10px] text-slate-400">{sim.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Concurrent Order Simulator */}
+              <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h3 className="text-xs font-bold text-white">Generate Live Simulated Town Order</h3>
+                  <p className="text-[11px] text-slate-400">Pushes a new customer order into the merchant queue and triggers rider dispatch</p>
+                </div>
+                <button
+                  onClick={() => {
+                    handleCreateConcurrentNewOrder();
+                    setTestSimulatedOrderCount((c) => c + 1);
+                  }}
+                  className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md"
+                >
+                  ⚡ Push Test Order (+{testSimulatedOrderCount} generated)
+                </button>
+              </div>
+
+              {/* Side-by-Side 3 Phone Simulator */}
+              <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xs font-bold text-white">Triple Screen View</h3>
+                  <p className="text-[11px] text-slate-400">Renders Customer, Merchant, and Rider screens side-by-side on this monitor</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setOnboardingStep('app');
+                    setActivePortal('split');
+                    setViewMode('mobile_app');
+                  }}
+                  className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs"
+                >
+                  Open 3 Phones Side-by-Side ➔
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: REGISTERED CITIZENS DATABASE */}
+          {founderTab === 'users' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-sm font-bold text-emerald-400">Registered Citizen & Business Records</h2>
+                  <p className="text-xs text-slate-400">Enforces single account verification and phone OTP record tracking</p>
+                </div>
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
+                  {registeredUsers.length} Verified Users
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 text-[10px] uppercase">
+                      <th className="py-2.5 px-3">Name / Username</th>
+                      <th className="py-2.5 px-3">Role</th>
+                      <th className="py-2.5 px-3">Verified Phone</th>
+                      <th className="py-2.5 px-3">ID Proof Status</th>
+                      <th className="py-2.5 px-3">Fast Access PIN</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {registeredUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-800/30">
+                        <td className="py-2.5 px-3 font-semibold text-white">
+                          {u.fullName} <span className="text-slate-400 text-[10px]">(@{u.username})</span>
+                        </td>
+                        <td className="py-2.5 px-3 capitalize">
+                          <span className="bg-slate-800 text-teal-300 px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-700">
+                            {u.role.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-emerald-400 font-mono">{u.phone}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="text-emerald-400 font-semibold">✓ Verified Citizen ID</span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-slate-400">•••• ({u.fastPin})</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: ESCROW LEDGER & COMMISSIONS */}
+          {founderTab === 'escrow' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-5">
+              <div>
+                <h2 className="text-sm font-bold text-emerald-400">Town Commission Governance & Escrow Controls</h2>
+                <p className="text-xs text-slate-400">Control platform fees and inspect the 35% / 85% dynamic event advance escrow</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>Merchant Platform Take-Rate:</span>
+                    <span className="text-emerald-400">{merchantCommissionPct}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.5"
+                    value={merchantCommissionPct}
+                    onChange={(e) => setMerchantCommissionPct(Number(e.target.value))}
+                    className="w-full accent-emerald-400"
+                  />
+                  <p className="text-[10px] text-slate-400">Capped at 10% maximum under VocalForLocal local governance charter.</p>
+                </div>
+
+                <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>Consumer Platform Fee:</span>
+                    <span className="text-emerald-400">{consumerFeePct}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.5"
+                    value={consumerFeePct}
+                    onChange={(e) => setConsumerFeePct(Number(e.target.value))}
+                    className="w-full accent-emerald-400"
+                  />
+                  <p className="text-[10px] text-slate-400">Protects consumer peace of mind with 0% to 5% flat scaling.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
   const renderAdminPortal = () => (
     <MobilePhoneShell title="💻 VocalForLocal Admin" badge="Master Governance">
       <div className="bg-slate-900 p-3 rounded-2xl border border-emerald-500/40 text-[11px] space-y-2">
@@ -2217,104 +2555,44 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-  return (
-    <div className="min-h-screen text-white p-3 font-sans">
- {/* Role-Enforced Portal Navigation Bar */}
-      <div className="max-w-6xl mx-auto mb-4 bg-slate-900/90 backdrop-blur border border-slate-800 p-2 rounded-2xl flex flex-wrap gap-1.5 justify-center items-center text-xs sticky top-2 z-40">
-        {/* Shopping Portal is open to Customer, Merchant, Service Provider, and Delivery Agent */}
-        <button
-          onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); }}
-          className={`px-3 py-1.5 rounded-xl font-bold transition ${
-            onboardingStep === 'app' && activePortal === 'customer'
-              ? 'bg-emerald-400 text-slate-950 shadow'
-              : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🛍️ Shopping Hub (Open to All)
-        </button>
-
-        {/* Merchant Dashboard: Only accessible to Merchant accounts */}
-        <button
-          onClick={() => {
-            if (currentUser && currentUser.role !== 'merchant') {
-              alert(`Access Restricted: You are signed in as a ${currentUser.role.replace('_', ' ')}. You can shop in the Customer Hub, but operational tools are limited to Merchants.`);
-              return;
-            }
-            setOnboardingStep('app');
-            setActivePortal('merchant');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold transition ${
-            onboardingStep === 'app' && activePortal === 'merchant'
-              ? 'bg-emerald-400 text-slate-950 shadow'
-              : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🏪 Store Operations
-        </button>
-
-        {/* Service Provider Dashboard (Decorators / Event Planners) */}
-        <button
-          onClick={() => {
-            if (currentUser && currentUser.role !== 'service_provider' && currentUser.role !== 'merchant') {
-              alert(`Access Restricted: Service Provider desk is for Event Decorators & Convention owners.`);
-              return;
-            }
-            setOnboardingStep('app');
-            setActivePortal('merchant');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold transition ${
-            onboardingStep === 'app' && activePortal === 'service_provider'
-              ? 'bg-emerald-400 text-slate-950 shadow'
-              : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🎉 Decorator Bidding Desk
-        </button>
-
-        {/* Delivery Partner Dashboard: Only accessible to Delivery Agents */}
-        <button
-          onClick={() => {
-            if (currentUser && currentUser.role !== 'delivery_agent') {
-              alert(`Access Restricted: Delivery Radar is strictly for registered Delivery Agents & Captains.`);
-              return;
-            }
-            setOnboardingStep('app');
-            setActivePortal('rider');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold transition ${
-            onboardingStep === 'app' && activePortal === 'rider'
-              ? 'bg-emerald-400 text-slate-950 shadow'
-              : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🛵 Delivery Radar
-        </button>
-
-        <button
-          onClick={() => setOnboardingStep('auth')}
-          className="px-3 py-1.5 rounded-xl font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 ml-auto"
-        >
-          🔐 Device Lock / Switch
-        </button>
-      </div>
-
-      {/* Render Current Step or Active Portal */}
-      {onboardingStep === 'permissions' && renderPermissionsScreen()}
-      {onboardingStep === 'auth' && renderAuthScreen()}
-      {onboardingStep === 'app' && (
-        <>
-          {activePortal === 'customer' && renderCustomerPortal()}
-          {activePortal === 'merchant' && renderMerchantPortal()}
-          {activePortal === 'rider' && renderRiderPortal()}
-          {activePortal === 'admin' && renderAdminPortal()}
-          {activePortal === 'split' && (
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {renderCustomerPortal()}
-              {renderMerchantPortal()}
-              {renderRiderPortal()}
-            </div>
+ return (
+    <>
+      {/* If viewMode is 'founder_web', render the full-screen Founder Management Web Dashboard */}
+      {viewMode === 'founder_web' ? (
+        renderFounderWebDashboard()
+      ) : (
+        /* Otherwise, render strictly the clean customer/partner mobile phone application */
+        <div className="min-h-screen text-white p-3 font-sans flex flex-col justify-center items-center relative">
+          
+          {/* Main App Screens */}
+          {onboardingStep === 'permissions' && renderPermissionsScreen()}
+          {onboardingStep === 'auth' && renderAuthScreen()}
+          {onboardingStep === 'app' && (
+            <>
+              {activePortal === 'customer' && renderCustomerPortal()}
+              {activePortal === 'merchant' && renderMerchantPortal()}
+              {activePortal === 'rider' && renderRiderPortal()}
+              {activePortal === 'admin' && renderFounderWebDashboard()}
+              {activePortal === 'split' && (
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
+                  {renderCustomerPortal()}
+                  {renderMerchantPortal()}
+                  {renderRiderPortal()}
+                </div>
+              )}
+            </>
           )}
-        </>
+
+          {/* Discreet Floating Founder Console Button (Visible during development testing) */}
+          <div className="fixed bottom-3 right-3 z-50">
+            <button
+              onClick={() => setViewMode('founder_web')}
+              className="bg-slate-900/90 hover:bg-slate-800 text-emerald-400 border border-emerald-500/50 shadow-xl px-3 py-2 rounded-2xl text-[11px] font-extrabold flex items-center gap-1.5 backdrop-blur transition"
+            >
+              <span>⚡ Founder Web Desk & Testing Module</span>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Google Maps Pinpoint Modal */}
@@ -2352,6 +2630,6 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
