@@ -36,18 +36,28 @@ function MobilePhoneShell({ title, badge, children }) {
 }
 
 export default function App() {
-  // STEP 1 & 2: Native Onboarding Flow State ('permissions' -> 'auth' -> 'app')
-  const [onboardingStep, setOnboardingStep] = useState('permissions');
+  // Set 'auth' as the default initial Page 1 of the app
+  const [onboardingStep, setOnboardingStep] = useState('auth');
+  const [authStage, setAuthStage] = useState('landing'); // 'landing' (Frame 1) | 'signin' (Frame 2) | 'signup' (Frame 3)
+  const [selectedRole, setSelectedRole] = useState('customer'); // 'customer' | 'merchant' | 'service_provider' | 'delivery_agent'
   const [permissions, setPermissions] = useState({
-    location: false,
-    notifications: false,
-    camera: false,
-    storage: false
+    location: true,
+    notifications: true,
+    camera: true,
+    storage: true
   });
+  // STEP 1 & 2: Native Onboarding Flow State ('permissions' -> 'auth' -> 'app')
+  //const [onboardingStep, setOnboardingStep] = useState('permissions');
+  //const [permissions, setPermissions] = useState({
+   // location: false,
+  //  notifications: false,
+   // camera: false,
+   // storage: false
+ // });
 
   // Step 2: Login / Signup with Role Dropdown (Default: 'consumer')
-  const [authMode, setAuthMode] = useState('signup'); // 'login' | 'signup'
-  const [selectedRole, setSelectedRole] = useState('consumer'); // 'consumer' | 'merchant' | 'rider'
+  //const [authMode, setAuthMode] = useState('signup'); // 'login' | 'signup'
+  //const [selectedRole, setSelectedRole] = useState('consumer'); // 'consumer' | 'merchant' | 'rider'
   const [authForm, setAuthForm] = useState({
     fullName: '',
     phone: '',
@@ -649,185 +659,140 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-  // STEP 2 SCREEN: UNIFIED LOGIN / SIGNUP WITH ROLE DROPDOWN (DEFAULT: CONSUMER)
+// STEP 1: INITIAL CLEAN PAGE 1 (MATCHING WIREFRAME)
   const renderAuthScreen = () => (
-    <MobilePhoneShell title="VocalForLocal • Account" badge="Step 2 of 2">
-      <div className="space-y-3.5 py-1">
-        <div className="text-center space-y-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400">
-            VocalForLocal • Adilabad Hub
-          </span>
-          <h2 className="text-base font-extrabold text-white">
-            {authMode === 'signup' ? 'Create Your Local Account' : 'Welcome Back Neighbor'}
-          </h2>
-          <p className="text-[11px] text-slate-400">
-            One unified app for Consumers, Local Merchants & Delivery Agents
-          </p>
+    <MobilePhoneShell title="VocalForLocal" badge="Page 1">
+      <div className="flex flex-col justify-center min-h-[720px] px-2 py-4">
+        {/* 1. Big Oval Company Logo Placeholder */}
+        <div className="flex justify-center mb-6">
+          <div className="w-48 h-64 rounded-[50%] border-[3px] border-emerald-400/80 bg-slate-900/60 flex flex-col items-center justify-center p-4 text-center shadow-lg shadow-emerald-500/10">
+            <span className="text-4xl mb-2">🌿</span>
+            <span className="text-xs font-black tracking-widest text-emerald-300">COMPANY LOGO</span>
+            <span className="text-[10px] text-slate-400 mt-1">(Placeholder)</span>
+          </div>
         </div>
 
-        {/* Login vs Sign Up Toggle */}
-        <div className="grid grid-cols-2 bg-slate-900 p-1 rounded-2xl border border-slate-800 text-xs">
-          <button
-            type="button"
-            onClick={() => setAuthMode('signup')}
-            className={`py-2 rounded-xl font-extrabold transition ${
-              authMode === 'signup'
-                ? 'bg-emerald-500 text-slate-950 shadow'
-                : 'text-slate-400 hover:text-white'
-            }`}
+        {/* 2. Role Dropdown Box */}
+        <div className="px-6 mb-4">
+          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+            Select Role
+          </label>
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className="w-full bg-[#0a1820] border-2 border-slate-700 text-white font-semibold text-xs rounded-xl px-3 py-3 outline-none focus:border-emerald-400 transition"
           >
-            ✨ Sign Up (New)
-          </button>
-          <button
-            type="button"
-            onClick={() => setAuthMode('login')}
-            className={`py-2 rounded-xl font-extrabold transition ${
-              authMode === 'login'
-                ? 'bg-emerald-500 text-slate-950 shadow'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🔐 Login
-          </button>
+            <option value="customer">Customer</option>
+            <option value="merchant">Merchant</option>
+            <option value="service_provider">Service Provider</option>
+            <option value="delivery_agent">Delivery Agent</option>
+          </select>
         </div>
 
-        <form onSubmit={handleAuthSubmit} className="space-y-3 bg-slate-900/70 border border-slate-800/90 p-3.5 rounded-2xl">
-          {/* Role Selection Dropdown (Defaults to Consumer) */}
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">
-              Select Account Role (Default: Consumer)
-            </label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-[#061014] border border-emerald-500/50 rounded-xl p-2.5 text-xs font-bold text-white focus:outline-none focus:border-emerald-400"
+        {/* FRAME 1: INITIAL BUTTONS (Sign In / Sign Up) */}
+        {authStage === 'landing' && (
+          <div className="px-6 flex gap-3 mt-1">
+            <button
+              type="button"
+              onClick={() => setAuthStage('signin')}
+              className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-600 transition"
             >
-              <option value="consumer">🛍️ Consumer (Shop Local, Events & Bike Taxi)</option>
-              <option value="merchant">🏪 Merchant Partner (Local Store / Hall / Decorator)</option>
-              <option value="rider">🛵 Delivery Agent / Bike & Auto Captain</option>
-            </select>
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthStage('signup')}
+              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition"
+            >
+              Sign Up
+            </button>
           </div>
+        )}
 
-          {authMode === 'signup' && (
-            <div>
-              <label className="block text-[10px] text-slate-300 font-semibold mb-1">
-                {selectedRole === 'merchant' ? 'Shop / Business Name' : 'Your Full Name'}
-              </label>
-              <input
-                type="text"
-                required
-                placeholder={
-                  selectedRole === 'merchant'
-                    ? 'e.g. Sri Laxmi Supermart'
-                    : selectedRole === 'rider'
-                    ? 'e.g. Raju Kumar'
-                    : 'e.g. Khoday Anvesh'
-                }
-                value={authForm.fullName}
-                onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
-                className="w-full bg-[#061014] border border-slate-700 rounded-xl p-2.5 text-xs text-white"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-[10px] text-slate-300 font-semibold mb-1">
-              10-Digit Mobile Number
-            </label>
+        {/* FRAME 2: SIGN IN (Username + Password) */}
+        {authStage === 'signin' && (
+          <form onSubmit={handleAuthSubmit} className="px-6 space-y-3">
             <input
-              type="tel"
+              type="text"
               required
-              placeholder="e.g. 9848012345"
-              value={authForm.phone}
-              onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
-              className="w-full bg-[#061014] border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+              placeholder="Username"
+              value={authForm.fullName}
+              onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
             />
-          </div>
-
-          <div>
-            <label className="block text-[10px] text-slate-300 font-semibold mb-1">
-              4-Digit PIN / Password
-            </label>
             <input
               type="password"
               required
-              placeholder="••••"
+              placeholder="Password"
               value={authForm.password}
               onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-              className="w-full bg-[#061014] border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
             />
-          </div>
-
-          {/* Role-Specific Extra Fields for Sign Up */}
-          {authMode === 'signup' && selectedRole === 'merchant' && (
-            <div>
-              <label className="block text-[10px] text-slate-300 font-semibold mb-1">
-                Store Category
-              </label>
-              <select
-                value={authForm.businessCategory}
-                onChange={(e) => setAuthForm({ ...authForm, businessCategory: e.target.value })}
-                className="w-full bg-[#061014] border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setAuthStage('landing')}
+                className="px-3 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
               >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {authMode === 'signup' && selectedRole === 'rider' && (
-            <div>
-              <label className="block text-[10px] text-slate-300 font-semibold mb-1">
-                Vehicle Type
-              </label>
-              <select
-                value={authForm.riderVehicle}
-                onChange={(e) => setAuthForm({ ...authForm, riderVehicle: e.target.value })}
-                className="w-full bg-[#061014] border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+                ← Back
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
               >
-                <option value="2-Wheeler Bike">🏍️ 2-Wheeler Bike (Up to 45kg + Bike Taxi)</option>
-                <option value="3-Wheeler Auto">🛺 3-Wheeler Auto (Up to 3 Quintals + Auto Ride)</option>
-              </select>
+                Sign In as {selectedRole.toUpperCase().replace('_', ' ')}
+              </button>
             </div>
-          )}
+          </form>
+        )}
 
-          <label className="flex items-center gap-2 text-[10px] text-slate-300 pt-1">
+        {/* FRAME 3: SIGN UP (Username + Number + Password) */}
+        {authStage === 'signup' && (
+          <form onSubmit={handleAuthSubmit} className="px-6 space-y-3">
             <input
-              type="checkbox"
-              checked={authForm.eSignAccepted}
-              onChange={(e) => setAuthForm({ ...authForm, eSignAccepted: e.target.checked })}
-              className="accent-emerald-500"
+              type="text"
+              required
+              placeholder="Username"
+              value={authForm.fullName}
+              onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
             />
-            <span>I agree to VocalForLocal Fair-Price & Escrow Protection Terms</span>
-          </label>
-
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-extrabold py-3 rounded-2xl text-xs shadow-lg shadow-emerald-500/20"
-          >
-            {authMode === 'signup'
-              ? `Create ${selectedRole.toUpperCase()} Account & Enter ➔`
-              : `Login as ${selectedRole.toUpperCase()} ➔`}
-          </button>
-        </form>
-
-        <button
-          onClick={() => {
-            setCurrentUser({ name: 'Anvesh (👑 Prime)', phone: '9848099999', role: 'consumer' });
-            setActivePortal('customer');
-            setOnboardingStep('app');
-          }}
-          className="w-full text-center text-[11px] text-emerald-400 underline font-semibold"
-        >
-          ⚡ Instant Demo Bypass (Enter as Consumer)
-        </button>
+            <input
+              type="tel"
+              required
+              placeholder="Mobile Number"
+              value={authForm.phone}
+              onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
+            />
+            <input
+              type="password"
+              required
+              placeholder="Password"
+              value={authForm.password}
+              onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
+            />
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setAuthStage('landing')}
+                className="px-3 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
+              >
+                ← Back
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
+              >
+                Create {selectedRole.toUpperCase().replace('_', ' ')} Account
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </MobilePhoneShell>
   );
-
   // 1. CUSTOMER MOBILE APP PORTAL (COOL PEACE-OF-MIND & CURIOSITY SHOPPING UI)
   const renderCustomerPortal = () => {
     const currentCart = categoryCarts[selectedCategory] || [];
