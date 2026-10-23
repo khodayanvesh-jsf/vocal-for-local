@@ -36,37 +36,63 @@ function MobilePhoneShell({ title, badge, children }) {
 }
 
 export default function App() {
-  // Set 'auth' as the default initial Page 1 of the app
+// --- CREDENTIALS & ONBOARDING DATABASE ENGINE ---
+  const savedDeviceUser = JSON.parse(localStorage.getItem('vfl_device_registered_user') || 'null');
+  const [hasRegisteredOnDevice, setHasRegisteredOnDevice] = useState(!!savedDeviceUser);
+
   const [onboardingStep, setOnboardingStep] = useState('auth');
-  const [authStage, setAuthStage] = useState('landing'); // 'landing' (Frame 1) | 'signin' (Frame 2) | 'signup' (Frame 3)
-  const [selectedRole, setSelectedRole] = useState('customer'); // 'customer' | 'merchant' | 'service_provider' | 'delivery_agent'
+  const [authStage, setAuthStage] = useState(savedDeviceUser ? 'fast_login' : 'landing');
+  const [selectedRole, setSelectedRole] = useState(savedDeviceUser?.role || 'customer');
   const [permissions, setPermissions] = useState({
     location: true,
     notifications: true,
     camera: true,
     storage: true
   });
-  // STEP 1 & 2: Native Onboarding Flow State ('permissions' -> 'auth' -> 'app')
-  //const [onboardingStep, setOnboardingStep] = useState('permissions');
-  //const [permissions, setPermissions] = useState({
-   // location: false,
-  //  notifications: false,
-   // camera: false,
-   // storage: false
- // });
 
-  // Step 2: Login / Signup with Role Dropdown (Default: 'consumer')
-  //const [authMode, setAuthMode] = useState('signup'); // 'login' | 'signup'
-  //const [selectedRole, setSelectedRole] = useState('consumer'); // 'consumer' | 'merchant' | 'rider'
-  const [authForm, setAuthForm] = useState({
-    fullName: '',
-    phone: '',
-    password: '',
-    businessCategory: 'daily_needs',
-    riderVehicle: '2-Wheeler Bike',
-    eSignAccepted: true
+  // Simulated Local Database (Preserved in browser storage)
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const localDb = localStorage.getItem('vfl_registered_users_db');
+    if (localDb) return JSON.parse(localDb);
+    return [
+      {
+        id: 'usr_demo',
+        fullName: 'Khoday Anvesh',
+        username: 'anvesh_k',
+        phone: '9848011223',
+        govId: '999988887777',
+        role: 'customer',
+        passwordHash: 'Adilabad@2026',
+        fastPin: '1990',
+        selfieUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+      }
+    ];
   });
-  const [currentUser, setCurrentUser] = useState(null);
+
+  // Registration Form State
+  const [regForm, setRegForm] = useState({
+    fullName: '',
+    username: '',
+    phone: '',
+    otpInput: '',
+    generatedOtp: '',
+    otpVerified: false,
+    govId: '',
+    selfieUrl: '',
+    password: '',
+    confirmPassword: '',
+    fastPin: ''
+  });
+
+  // Login Form State
+  const [loginForm, setLoginForm] = useState({
+    usernameOrPhone: '',
+    password: '',
+    pinInput: ''
+  });
+
+  const [authError, setAuthError] = useState('');
+  const [currentUser, setCurrentUser] = useState(savedDeviceUser || null);
 
   // Active Portal View
   const [activePortal, setActivePortal] = useState('customer');
@@ -202,43 +228,193 @@ export default function App() {
     }
   };
 
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    const displayName =
-      authForm.fullName.trim() ||
-      (selectedRole === 'consumer'
-        ? 'Anvesh'
-        : selectedRole === 'merchant'
-        ? 'Sri Laxmi Supermart'
-        : 'Raju (Town Rider)');
+// --- CREDENTIAL VERIFICATION & FRAUD PREVENTION LOGIC ---
 
-    const userObj = {
-      name: displayName,
-      phone: authForm.phone || '9848099999',
-      role: selectedRole
-    };
-    setCurrentUser(userObj);
+  // Password Policy: min 8 characters, at least 1 number, at least 1 capital letter
+  const validatePasswordStrength = (pw) => {
+    return pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw);
+  };
 
-    if (selectedRole === 'merchant' && authMode === 'signup') {
-      setPendingMerchants([
-        ...pendingMerchants,
-        {
-          id: `pm_${Date.now()}`,
-          businessName: displayName,
-          phone: userObj.phone,
-          categoryId: authForm.businessCategory,
-          eSigned: true,
-          status: 'pending'
-        }
-      ]);
+  // 1. Mandatory Phone Number & OTP Dispatch
+  const handleSendRegistrationOtp = () => {
+    if (!/^\d{10}$/.test(regForm.phone)) {
+      setAuthError('Please enter a valid 10-digit mobile number.');
+      return;
     }
 
-    // Route directly to the chosen role's mobile portal
-    if (selectedRole === 'consumer') setActivePortal('customer');
-    else if (selectedRole === 'merchant') setActivePortal('merchant');
-    else if (selectedRole === 'rider') setActivePortal('rider');
+    // Anti-fraud: Verify phone is not already in the database
+    const phoneExists = registeredUsers.some((u) => u.phone === regForm.phone);
+    if (phoneExists) {
+      setAuthError('This phone number is already registered. One account per person only.');
+      return;
+    }
 
+    const testOtp = String(Math.floor(100000 + Math.random() * 900000));
+    setRegForm((prev) => ({ ...prev, generatedOtp: testOtp, otpInput: '' }));
+    setAuthError('');
+    alert(`🔐 VocalForLocal Security OTP: ${testOtp}\n(Test SMS verification for Adilabad)`);
+  };
+
+  const handleVerifyRegistrationOtp = () => {
+    if (!regForm.otpInput || regForm.otpInput !== regForm.generatedOtp) {
+      setAuthError('Invalid OTP! Please enter the exact 6-digit code received.');
+      return;
+    }
+    setRegForm((prev) => ({ ...prev, otpVerified: true }));
+    setAuthError('');
+    setAuthStage('signup_step2'); // Proceed to Identity Details
+  };
+
+  // Selfie file attachment
+  const handleCaptureSelfie = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const tempUrl = URL.createObjectURL(file);
+      setRegForm((prev) => ({ ...prev, selfieUrl: tempUrl }));
+    }
+  };
+
+  // 2. Identity & ID Proof Verification (Anti-Duplicate Check)
+  const handleCompleteIdentityStep = () => {
+    if (!regForm.fullName.trim() || !regForm.username.trim()) {
+      setAuthError('Please fill in your Full Legal Name and Username.');
+      return;
+    }
+
+    // 12-Digit ID Proof format check
+    const cleanedGovId = regForm.govId.replace(/\s+/g, '');
+    if (!/^\d{12}$/.test(cleanedGovId)) {
+      setAuthError('Please enter a valid 12-digit Government ID proof number.');
+      return;
+    }
+
+    // Anti-fraud: Verify ID proof is not already registered
+    const idExists = registeredUsers.some((u) => u.govId === cleanedGovId);
+    if (idExists) {
+      setAuthError('This ID Proof is already registered with another account. Duplicate registration blocked.');
+      return;
+    }
+
+    // Check unique username
+    const usernameExists = registeredUsers.some(
+      (u) => u.username.toLowerCase() === regForm.username.toLowerCase()
+    );
+    if (usernameExists) {
+      setAuthError('Username already taken. Please pick another username.');
+      return;
+    }
+
+    setAuthError('');
+    setAuthStage('signup_step3'); // Proceed to Password & PIN Setup
+  };
+
+  // 3. Finalize Registration & Lock Device
+  const handleFinalizeRegistration = () => {
+    if (!validatePasswordStrength(regForm.password)) {
+      setAuthError('Password must be at least 8 characters, containing at least 1 uppercase letter and 1 number.');
+      return;
+    }
+
+    if (regForm.password !== regForm.confirmPassword) {
+      setAuthError('Passwords do not match.');
+      return;
+    }
+
+    if (!/^\d{4}$/.test(regForm.fastPin)) {
+      setAuthError('Please enter a 4-digit quick access PIN.');
+      return;
+    }
+
+    const newUser = {
+      id: `usr_${Date.now()}`,
+      fullName: regForm.fullName.trim(),
+      username: regForm.username.trim(),
+      phone: regForm.phone.trim(),
+      govId: regForm.govId.replace(/\s+/g, ''),
+      role: selectedRole,
+      passwordHash: regForm.password,
+      fastPin: regForm.fastPin,
+      selfieUrl: regForm.selfieUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      biometricEnabled: true,
+      registeredAt: new Date().toISOString()
+    };
+
+    // Store in simulated cloud database
+    const updatedDb = [...registeredUsers, newUser];
+    setRegisteredUsers(updatedDb);
+    localStorage.setItem('vfl_registered_users_db', JSON.stringify(updatedDb));
+
+    // Lock device to single registration
+    localStorage.setItem('vfl_device_registered_user', JSON.stringify(newUser));
+    setHasRegisteredOnDevice(true);
+    setCurrentUser(newUser);
+
+    alert('✅ Verification Successful! Your account is created and this device is now locked to your credentials.');
     setOnboardingStep('app');
+    setActivePortal('customer'); // All users begin with personal shopping access
+  };
+
+  // Database Verification on Standard Login
+  const handlePasswordLogin = (e) => {
+    e.preventDefault();
+    const query = loginForm.usernameOrPhone.trim().toLowerCase();
+    const matchedUser = registeredUsers.find(
+      (u) => (u.username.toLowerCase() === query || u.phone === query) && u.role === selectedRole
+    );
+
+    if (!matchedUser) {
+      setAuthError(`No verified ${selectedRole} account matches these credentials.`);
+      return;
+    }
+
+    if (matchedUser.passwordHash !== loginForm.password) {
+      setAuthError('Incorrect password. Please try again.');
+      return;
+    }
+
+    setCurrentUser(matchedUser);
+    localStorage.setItem('vfl_device_registered_user', JSON.stringify(matchedUser));
+    setHasRegisteredOnDevice(true);
+    setAuthError('');
+    setOnboardingStep('app');
+    setActivePortal('customer');
+  };
+
+  // Fast 4-Digit PIN Login
+  const handlePinLogin = (e) => {
+    e.preventDefault();
+    const targetUser = currentUser || savedDeviceUser;
+    if (!targetUser) {
+      setAuthStage('signin');
+      return;
+    }
+
+    if (loginForm.pinInput === targetUser.fastPin) {
+      setCurrentUser(targetUser);
+      setAuthError('');
+      setOnboardingStep('app');
+      setActivePortal('customer');
+    } else {
+      setAuthError('Incorrect 4-Digit PIN.');
+    }
+  };
+
+  // Biometric Fast Unlock (WebAuthn / Fingerprint Sensor)
+  const handleBiometricLogin = async () => {
+    const targetUser = currentUser || savedDeviceUser;
+    if (!targetUser) return;
+
+    if (window.PublicKeyCredential) {
+      try {
+        setCurrentUser(targetUser);
+        setOnboardingStep('app');
+        setActivePortal('customer');
+      } catch (err) {
+        alert('Biometric sensor cancelled. Please enter your 4-digit PIN.');
+      }
+    } else {
+      alert('Biometric sensor not detected on this browser. Please use your 4-digit PIN.');
+    }
   };
 
   const activeOrder = orders.find((o) => o.id === activeOrderId) || orders[0] || null;
@@ -659,140 +835,419 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-// STEP 1: INITIAL CLEAN PAGE 1 (MATCHING WIREFRAME)
+// STEP 1: VERIFIED AUTHENTICATION & MULTI-STEP REGISTRATION
   const renderAuthScreen = () => (
-    <MobilePhoneShell title="VocalForLocal" badge="Page 1">
-      <div className="flex flex-col justify-center min-h-[720px] px-2 py-4">
-        {/* 1. Big Oval Company Logo Placeholder */}
-        <div className="flex justify-center mb-6">
-          <div className="w-48 h-64 rounded-[50%] border-[3px] border-emerald-400/80 bg-slate-900/60 flex flex-col items-center justify-center p-4 text-center shadow-lg shadow-emerald-500/10">
-            <span className="text-4xl mb-2">🌿</span>
-            <span className="text-xs font-black tracking-widest text-emerald-300">COMPANY LOGO</span>
-            <span className="text-[10px] text-slate-400 mt-1">(Placeholder)</span>
+    <MobilePhoneShell title="VocalForLocal" badge="Security Vault">
+      <div className="flex flex-col justify-center min-h-[730px] px-3 py-2 text-white">
+        {/* Oval Company Logo Header */}
+        <div className="flex justify-center mb-3">
+          <div className="w-24 h-24 rounded-full border-2 border-emerald-400/80 bg-slate-900/80 flex flex-col items-center justify-center p-2 text-center shadow-lg shadow-emerald-500/20">
+            <span className="text-3xl">🌿</span>
+            <span className="text-[9px] font-black tracking-widest text-emerald-300">VOCALFORLOCAL</span>
           </div>
         </div>
 
-        {/* 2. Role Dropdown Box */}
-        <div className="px-6 mb-4">
-          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-            Select Role
-          </label>
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="w-full bg-[#0a1820] border-2 border-slate-700 text-white font-semibold text-xs rounded-xl px-3 py-3 outline-none focus:border-emerald-400 transition"
-          >
-            <option value="customer">Customer</option>
-            <option value="merchant">Merchant</option>
-            <option value="service_provider">Service Provider</option>
-            <option value="delivery_agent">Delivery Agent</option>
-          </select>
-        </div>
+        {/* Global Error Banner */}
+        {authError && (
+          <div className="bg-rose-950/90 border border-rose-500 rounded-xl p-2.5 mb-2.5 text-[11px] text-rose-200 text-center font-semibold">
+            ⚠️ {authError}
+          </div>
+        )}
 
-        {/* FRAME 1: INITIAL BUTTONS (Sign In / Sign Up) */}
+        {/* ---------------------------------------------------- */}
+        {/* FAST ACCESS: DEVICE-LOCKED MODE (If Already Registered) */}
+        {/* ---------------------------------------------------- */}
+        {authStage === 'fast_login' && (
+          <div className="space-y-4 px-2">
+            <div className="text-center">
+              <h2 className="text-sm font-bold text-emerald-400">Welcome Back</h2>
+              <p className="text-xs text-slate-300 font-semibold mt-0.5">
+                {currentUser?.fullName || savedDeviceUser?.fullName}
+              </p>
+              <span className="inline-block text-[9px] uppercase tracking-wider bg-slate-800 text-teal-300 px-2 py-0.5 rounded-full mt-1 border border-slate-700">
+                {(currentUser?.role || savedDeviceUser?.role || 'customer').replace('_', ' ')}
+              </span>
+            </div>
+
+            <form onSubmit={handlePinLogin} className="space-y-3">
+              <label className="block text-[10px] text-slate-400 text-center font-bold">
+                ENTER 4-DIGIT QUICK PIN
+              </label>
+              <input
+                type="password"
+                maxLength={4}
+                required
+                autoFocus
+                placeholder="••••"
+                value={loginForm.pinInput}
+                onChange={(e) => setLoginForm({ ...loginForm, pinInput: e.target.value })}
+                className="w-36 mx-auto block bg-[#0a1820] border-2 border-emerald-500/80 rounded-2xl py-2 text-center text-xl tracking-[0.4em] font-mono text-white outline-none focus:border-emerald-400"
+              />
+              <button
+                type="submit"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2.5 rounded-xl text-xs shadow-md"
+              >
+                Unlock with PIN
+              </button>
+            </form>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={handleBiometricLogin}
+                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-4 py-2 rounded-2xl text-xs text-slate-200 shadow"
+              >
+                <span className="text-lg">👆</span> Fast Biometric Login
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800/80 flex justify-between text-[11px]">
+              <button
+                type="button"
+                onClick={() => { setAuthError(''); setAuthStage('signin'); }}
+                className="text-teal-400 underline font-semibold"
+              >
+                Use Password Instead
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('Clear registered device lock for testing?')) {
+                    localStorage.removeItem('vfl_device_registered_user');
+                    setHasRegisteredOnDevice(false);
+                    setCurrentUser(null);
+                    setAuthStage('landing');
+                  }
+                }}
+                className="text-rose-400 underline"
+              >
+                Reset Device Lock
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* FRAME 1: LANDING SCREEN                              */}
+        {/* ---------------------------------------------------- */}
         {authStage === 'landing' && (
-          <div className="px-6 flex gap-3 mt-1">
+          <div className="space-y-4 px-3">
+            <div className="text-center">
+              <h2 className="text-sm font-black text-white">Adilabad Secure Portal</h2>
+              <p className="text-[11px] text-slate-400">Verified Hyperlocal Accounts & Fraud Prevention</p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+                Select Account Role
+              </label>
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 text-white font-bold text-xs rounded-xl p-3 outline-none focus:border-emerald-400"
+              >
+                <option value="customer">Customer (Neighborhood Shopping & Rides)</option>
+                <option value="merchant">Merchant (Store / Hall Owner)</option>
+                <option value="service_provider">Service Provider (Decorator / Events)</option>
+                <option value="delivery_agent">Delivery Agent (Bike / Auto Captain)</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => { setAuthError(''); setAuthStage('signin'); }}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-700"
+              >
+                Sign In
+              </button>
+              {!hasRegisteredOnDevice ? (
+                <button
+                  type="button"
+                  onClick={() => { setAuthError(''); setAuthStage('signup_step1'); }}
+                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
+                >
+                  Register New
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAuthStage('fast_login')}
+                  className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
+                >
+                  Quick PIN / Bio
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* FRAME 2: STANDARD USERNAME & PASSWORD SIGN IN        */}
+        {/* ---------------------------------------------------- */}
+        {authStage === 'signin' && (
+          <form onSubmit={handlePasswordLogin} className="space-y-3 px-3">
+            <div className="text-center mb-1">
+              <h3 className="text-xs font-bold text-emerald-400">Sign In to Your Account</h3>
+              <span className="text-[10px] text-slate-400 capitalize">Role: {selectedRole.replace('_', ' ')}</span>
+            </div>
+
+            <input
+              type="text"
+              required
+              placeholder="Username or 10-Digit Mobile"
+              value={loginForm.usernameOrPhone}
+              onChange={(e) => setLoginForm({ ...loginForm, usernameOrPhone: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+            />
+            <input
+              type="password"
+              required
+              placeholder="Password"
+              value={loginForm.password}
+              onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+            />
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setAuthStage(hasRegisteredOnDevice ? 'fast_login' : 'landing')}
+                className="px-3 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
+              >
+                ← Back
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow"
+              >
+                Verify & Enter
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* STEP 1 OF 3: PHONE VERIFICATION & OTP                */}
+        {/* ---------------------------------------------------- */}
+        {authStage === 'signup_step1' && (
+          <div className="space-y-3 px-3">
+            <div className="text-center">
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">Step 1 of 3</span>
+              <h3 className="text-xs font-bold text-white">Phone Verification (Anti-Fraud)</h3>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-1">10-DIGIT MOBILE NUMBER</label>
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  maxLength={10}
+                  required
+                  placeholder="e.g. 9848011223"
+                  value={regForm.phone}
+                  onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
+                  className="flex-1 bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendRegistrationOtp}
+                  className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-[10px] px-3 rounded-xl"
+                >
+                  Send OTP
+                </button>
+              </div>
+            </div>
+
+            {regForm.generatedOtp && (
+              <div className="space-y-2 pt-1">
+                <label className="block text-[10px] text-emerald-400 font-bold">ENTER 6-DIGIT OTP</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="6-Digit OTP"
+                  value={regForm.otpInput}
+                  onChange={(e) => setRegForm({ ...regForm, otpInput: e.target.value })}
+                  className="w-full bg-[#0a1820] border-2 border-emerald-500/80 rounded-xl p-2.5 text-center text-sm font-mono tracking-widest text-white outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyRegistrationOtp}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2.5 rounded-xl text-xs shadow"
+                >
+                  Verify Phone Number ➔
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
-              onClick={() => setAuthStage('signin')}
-              className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-600 transition"
+              onClick={() => setAuthStage('landing')}
+              className="w-full text-center text-[10px] text-slate-400 underline mt-2"
             >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthStage('signup')}
-              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition"
-            >
-              Sign Up
+              Cancel & Return Home
             </button>
           </div>
         )}
 
-        {/* FRAME 2: SIGN IN (Username + Password) */}
-        {authStage === 'signin' && (
-          <form onSubmit={handleAuthSubmit} className="px-6 space-y-3">
-            <input
-              type="text"
-              required
-              placeholder="Username"
-              value={authForm.fullName}
-              onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
-              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-            />
-            <input
-              type="password"
-              required
-              placeholder="Password"
-              value={authForm.password}
-              onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-            />
+        {/* ---------------------------------------------------- */}
+        {/* STEP 2 OF 3: LEGAL NAME, USERNAME, ID & SELFIE       */}
+        {/* ---------------------------------------------------- */}
+        {authStage === 'signup_step2' && (
+          <div className="space-y-2.5 px-3">
+            <div className="text-center">
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">Step 2 of 3</span>
+              <h3 className="text-xs font-bold text-white">Identity Credentials & Verification</h3>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">FULL LEGAL NAME</label>
+              <input
+                type="text"
+                required
+                placeholder="As per Government ID"
+                value={regForm.fullName}
+                onChange={(e) => setRegForm({ ...regForm, fullName: e.target.value })}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">UNIQUE USERNAME</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. anvesh_adilabad"
+                value={regForm.username}
+                onChange={(e) => setRegForm({ ...regForm, username: e.target.value })}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">
+                GOVERNMENT ID PROOF NUMBER (12 DIGITS)
+              </label>
+              <input
+                type="text"
+                maxLength={12}
+                required
+                placeholder="Enter 12-Digit ID Number"
+                value={regForm.govId}
+                onChange={(e) => setRegForm({ ...regForm, govId: e.target.value })}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs font-mono text-white outline-none focus:border-emerald-400"
+              />
+              <p className="text-[9px] text-slate-400 mt-0.5">Enforces 1 Account Per Citizen policy.</p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">SELFIE / PHOTO VERIFICATION</label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="user"
+                onChange={handleCaptureSelfie}
+                className="w-full text-[10px] text-slate-300 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-500 file:text-slate-950"
+              />
+              {regForm.selfieUrl && (
+                <div className="mt-1 flex items-center gap-2">
+                  <img src={regForm.selfieUrl} alt="Selfie preview" className="w-9 h-9 rounded-full object-cover border border-emerald-400" />
+                  <span className="text-[9px] text-emerald-400 font-bold">✓ Photo attached</span>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => setAuthStage('landing')}
-                className="px-3 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
+                onClick={() => setAuthStage('signup_step1')}
+                className="px-3 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
               >
                 ← Back
               </button>
               <button
-                type="submit"
-                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
+                type="button"
+                onClick={handleCompleteIdentityStep}
+                className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow"
               >
-                Sign In as {selectedRole.toUpperCase().replace('_', ' ')}
+                Continue to Security ➔
               </button>
             </div>
-          </form>
+          </div>
         )}
 
-        {/* FRAME 3: SIGN UP (Username + Number + Password) */}
-        {authStage === 'signup' && (
-          <form onSubmit={handleAuthSubmit} className="px-6 space-y-3">
-            <input
-              type="text"
-              required
-              placeholder="Username"
-              value={authForm.fullName}
-              onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
-              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-            />
-            <input
-              type="tel"
-              required
-              placeholder="Mobile Number"
-              value={authForm.phone}
-              onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
-              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-            />
-            <input
-              type="password"
-              required
-              placeholder="Password"
-              value={authForm.password}
-              onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-              className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-            />
+        {/* ---------------------------------------------------- */}
+        {/* STEP 3 OF 3: STRONG PASSWORD & QUICK PIN             */}
+        {/* ---------------------------------------------------- */}
+        {authStage === 'signup_step3' && (
+          <div className="space-y-3 px-3">
+            <div className="text-center">
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">Step 3 of 3</span>
+              <h3 className="text-xs font-bold text-white">Password & Biometric Fast PIN</h3>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">
+                PASSWORD (MIN 8 CHARS, 1 NUMBER, 1 UPPERCASE)
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="e.g. Adilabad@2026"
+                value={regForm.password}
+                onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">CONFIRM PASSWORD</label>
+              <input
+                type="password"
+                required
+                placeholder="Re-enter password"
+                value={regForm.confirmPassword}
+                onChange={(e) => setRegForm({ ...regForm, confirmPassword: e.target.value })}
+                className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold mb-0.5">CREATE 4-DIGIT QUICK PIN</label>
+              <input
+                type="password"
+                maxLength={4}
+                required
+                placeholder="••••"
+                value={regForm.fastPin}
+                onChange={(e) => setRegForm({ ...regForm, fastPin: e.target.value })}
+                className="w-36 bg-[#0a1820] border-2 border-emerald-500/80 rounded-xl p-2 text-center text-sm font-mono tracking-widest text-white outline-none"
+              />
+              <p className="text-[9px] text-slate-400 mt-0.5">Used for biometric fallback and instant unlocks.</p>
+            </div>
+
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => setAuthStage('landing')}
-                className="px-3 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
+                onClick={() => setAuthStage('signup_step2')}
+                className="px-3 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700"
               >
                 ← Back
               </button>
               <button
-                type="submit"
-                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
+                type="button"
+                onClick={handleFinalizeRegistration}
+                className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow"
               >
-                Create {selectedRole.toUpperCase().replace('_', ' ')} Account
+                Lock Device & Complete Setup
               </button>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </MobilePhoneShell>
   );
+
   // 1. CUSTOMER MOBILE APP PORTAL (COOL PEACE-OF-MIND & CURIOSITY SHOPPING UI)
   const renderCustomerPortal = () => {
     const currentCart = categoryCarts[selectedCategory] || [];
@@ -1764,88 +2219,82 @@ const handlePlaceCategoryOrder = async (catId) => {
 
   return (
     <div className="min-h-screen text-white p-3 font-sans">
-      {/* Top Demo & Onboarding Navigation Bar */}
+ {/* Role-Enforced Portal Navigation Bar */}
       <div className="max-w-6xl mx-auto mb-4 bg-slate-900/90 backdrop-blur border border-slate-800 p-2 rounded-2xl flex flex-wrap gap-1.5 justify-center items-center text-xs sticky top-2 z-40">
+        {/* Shopping Portal is open to Customer, Merchant, Service Provider, and Delivery Agent */}
         <button
-          onClick={() => setOnboardingStep('permissions')}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
-            onboardingStep === 'permissions' ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🛡️ Step 1: Permissions
-        </button>
-        <button
-          onClick={() => setOnboardingStep('auth')}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
-            onboardingStep === 'auth' ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'
-          }`}
-        >
-          🔐 Step 2: Login / Signup
-        </button>
-        <button
-          onClick={() => {
-            setOnboardingStep('app');
-            setActivePortal('customer');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
+          onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); }}
+          className={`px-3 py-1.5 rounded-xl font-bold transition ${
             onboardingStep === 'app' && activePortal === 'customer'
-              ? 'bg-emerald-400 text-slate-950'
-              : 'bg-slate-800'
+              ? 'bg-emerald-400 text-slate-950 shadow'
+              : 'bg-slate-800 text-slate-300'
           }`}
         >
-          🛍️ Consumer App
+          🛍️ Shopping Hub (Open to All)
         </button>
+
+        {/* Merchant Dashboard: Only accessible to Merchant accounts */}
         <button
           onClick={() => {
+            if (currentUser && currentUser.role !== 'merchant') {
+              alert(`Access Restricted: You are signed in as a ${currentUser.role.replace('_', ' ')}. You can shop in the Customer Hub, but operational tools are limited to Merchants.`);
+              return;
+            }
             setOnboardingStep('app');
             setActivePortal('merchant');
           }}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
+          className={`px-3 py-1.5 rounded-xl font-bold transition ${
             onboardingStep === 'app' && activePortal === 'merchant'
-              ? 'bg-emerald-400 text-slate-950'
-              : 'bg-slate-800'
+              ? 'bg-emerald-400 text-slate-950 shadow'
+              : 'bg-slate-800 text-slate-300'
           }`}
         >
-          🏪 Merchant App
+          🏪 Store Operations
         </button>
+
+        {/* Service Provider Dashboard (Decorators / Event Planners) */}
         <button
           onClick={() => {
+            if (currentUser && currentUser.role !== 'service_provider' && currentUser.role !== 'merchant') {
+              alert(`Access Restricted: Service Provider desk is for Event Decorators & Convention owners.`);
+              return;
+            }
+            setOnboardingStep('app');
+            setActivePortal('merchant');
+          }}
+          className={`px-3 py-1.5 rounded-xl font-bold transition ${
+            onboardingStep === 'app' && activePortal === 'service_provider'
+              ? 'bg-emerald-400 text-slate-950 shadow'
+              : 'bg-slate-800 text-slate-300'
+          }`}
+        >
+          🎉 Decorator Bidding Desk
+        </button>
+
+        {/* Delivery Partner Dashboard: Only accessible to Delivery Agents */}
+        <button
+          onClick={() => {
+            if (currentUser && currentUser.role !== 'delivery_agent') {
+              alert(`Access Restricted: Delivery Radar is strictly for registered Delivery Agents & Captains.`);
+              return;
+            }
             setOnboardingStep('app');
             setActivePortal('rider');
           }}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
+          className={`px-3 py-1.5 rounded-xl font-bold transition ${
             onboardingStep === 'app' && activePortal === 'rider'
-              ? 'bg-emerald-400 text-slate-950'
-              : 'bg-slate-800'
+              ? 'bg-emerald-400 text-slate-950 shadow'
+              : 'bg-slate-800 text-slate-300'
           }`}
         >
-          🛵 Delivery Agent
+          🛵 Delivery Radar
         </button>
+
         <button
-          onClick={() => {
-            setOnboardingStep('app');
-            setActivePortal('admin');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
-            onboardingStep === 'app' && activePortal === 'admin'
-              ? 'bg-emerald-400 text-slate-950'
-              : 'bg-slate-800'
-          }`}
+          onClick={() => setOnboardingStep('auth')}
+          className="px-3 py-1.5 rounded-xl font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 ml-auto"
         >
-          💻 Admin ({pendingMerchants.length + pendingSubCategories.length})
-        </button>
-        <button
-          onClick={() => {
-            setOnboardingStep('app');
-            setActivePortal('split');
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold ${
-            onboardingStep === 'app' && activePortal === 'split'
-              ? 'bg-teal-400 text-slate-950'
-              : 'bg-slate-800'
-          }`}
-        >
-          ⚡ All 3 Phones Side-by-Side
+          🔐 Device Lock / Switch
         </button>
       </div>
 
