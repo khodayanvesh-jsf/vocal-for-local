@@ -1,3 +1,32 @@
+/**
+ * ============================================================================
+ * 🌿 VOCALFORLOCAL • ADILABAD SUPER-APP (MASTER APPLICATION FILE)
+ * ============================================================================
+ * File Location : src/App.jsx
+ * Description   : Complete Single-File Architecture containing Mobile Portals
+ *                 (Customer, Merchant, Service Provider, Rider) + Desktop
+ *                 Founder Admin Web Suite & Developer Testing Simulator.
+ *
+ * ============================================================================
+ * 📑 QUICK NAVIGATION TABLE OF CONTENTS (Press Ctrl + F and search the tag)
+ * ============================================================================
+ * [SECTION-01] : Imports & Native Smartphone Bezel Wrapper (MobilePhoneShell)
+ * [SECTION-02] : Application State Variables (Auth, Carts, Orders, Admin, GPS)
+ * [SECTION-03] : Security, OTP, Anti-Fraud ID, Password & Biometric Functions
+ * [SECTION-04] : Logistics, Cart Management, Order Flow & Event Math Functions
+ * [SECTION-05] : Screen 1 — Native Device Permissions Gateway UI
+ * [SECTION-06] : Screen 2 — Multi-Step Registration, Login & Fast PIN UI
+ * [SECTION-07] : Portal 1 — Customer Super-App (Stores, Decor Bidding, Taxi)
+ * [SECTION-08] : Portal 2 — Merchant & Decorator Partner App UI
+ * [SECTION-09] : Portal 3 — Delivery Agent / Bike & Auto Captain App UI
+ * [SECTION-10] : Portal 4 — Desktop Founder Admin Web Suite & Testing Bench
+ * [SECTION-11] : Main Render Router, Top Control Bar & Google Maps Modal
+ * ============================================================================
+ */
+
+// ============================================================================
+// [SECTION-01] IMPORTS & NATIVE SMARTPHONE BEZEL WRAPPER
+// ============================================================================
 import React, { useState } from 'react';
 import {
   INITIAL_CATEGORIES,
@@ -8,26 +37,33 @@ import {
   REJECTION_REASONS
 } from './data';
 
-// Native Smartphone Bezel Wrapper with Serene Emerald & Slate Peace-of-Mind Theme
+/**
+ * MobilePhoneShell Component
+ * --------------------------
+ * Wraps any mobile portal inside a realistic 405px smartphone frame with
+ * a top status bar, scrollable body, and bottom home indicator bar.
+ * Future Update Tip: Adjust `max-w-[405px]` or `min-h-[800px]` to resize phone frame.
+ */
 function MobilePhoneShell({ title, badge, children }) {
   return (
     <div className="w-full max-w-[405px] mx-auto bg-[#071318] border-[7px] border-slate-800/90 rounded-[44px] shadow-[0_25px_70px_-15px_rgba(16,185,129,0.28)] overflow-hidden flex flex-col min-h-[800px] max-h-[850px] relative">
-      {/* Smartphone Top Notch & Status Bar */}
+      {/* Top Smartphone Notch & Status Bar */}
       <div className="bg-[#040B0E] px-5 py-2.5 flex justify-between items-center text-[10px] text-slate-300 border-b border-emerald-950/80 select-none">
         <span className="font-extrabold text-emerald-400 tracking-wide flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           {title}
         </span>
+        {/* Speaker / Camera Notch Pill */}
         <div className="w-16 h-3.5 bg-slate-900 rounded-full border border-slate-800" />
         <span className="text-teal-300 font-semibold">{badge}</span>
       </div>
 
-      {/* Scrollable Mobile Viewport */}
+      {/* Main Scrollable App Viewport */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 bg-gradient-to-b from-[#071318] via-[#09181F] to-[#050E12]">
         {children}
       </div>
 
-      {/* Bottom Home Indicator Bar */}
+      {/* Bottom Gesture Home Bar */}
       <div className="bg-[#040B0E] py-2.5 flex justify-center border-t border-emerald-950/60">
         <div className="w-28 h-1 bg-slate-700 rounded-full" />
       </div>
@@ -35,19 +71,46 @@ function MobilePhoneShell({ title, badge, children }) {
   );
 }
 
+// ============================================================================
+// [SECTION-02] APPLICATION STATE VARIABLES
+// ============================================================================
 export default function App() {
-  // --- FOUNDER CONSOLE & TESTING BENCH STATE ---
-  const [viewMode, setViewMode] = useState('mobile_app');
-  const [founderTab, setFounderTab] = useState('approvals');
+  // Check if user opened URL with `?admin=true` to jump straight to Founder Web Desk
+  const isDirectAdminUrl =
+    typeof window !== 'undefined' && window.location.search.includes('admin');
+
+  // --- 2A. FOUNDER CONSOLE & TESTING BENCH STATE ---
+  // viewMode controls whether we show the 'mobile_app' bezel or 'founder_web' desktop dashboard
+  const [viewMode, setViewMode] = useState(isDirectAdminUrl ? 'founder_web' : 'mobile_app');
+  // founderTab controls active tab in Founder Web Desk: 'approvals' | 'testing' | 'users' | 'escrow'
+  const [founderTab, setFounderTab] = useState('testing');
+  // Counter tracking how many test orders were pushed from the Testing Simulator
   const [testSimulatedOrderCount, setTestSimulatedOrderCount] = useState(0);
 
-  // --- CREDENTIALS & ONBOARDING DATABASE ENGINE ---
-  const savedDeviceUser = JSON.parse(localStorage.getItem('vfl_device_registered_user') || 'null');
+  // --- 2B. DEVICE REGISTRATION LOCK & ONBOARDING STATE ---
+  // Checks browser localStorage to see if this phone/device already completed registration
+  const savedDeviceUser =
+    typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('vfl_device_registered_user') || 'null')
+      : null;
   const [hasRegisteredOnDevice, setHasRegisteredOnDevice] = useState(!!savedDeviceUser);
 
+  // onboardingStep: 'permissions' (Device hardware access) | 'auth' (Login/Register) | 'app' (Main Portals)
   const [onboardingStep, setOnboardingStep] = useState('auth');
+
+  // authStage controls which sub-screen inside 'auth' is displayed:
+  // 'landing'      -> Initial Page 1 with Oval Logo, Role Dropdown, [Sign In] & [Register New] buttons
+  // 'signin'       -> Username + Password login screen
+  // 'signup_step1' -> Mandatory Phone Number + 6-Digit OTP Verification
+  // 'signup_step2' -> Full Legal Name + Unique Username + Gov ID Proof + Live Selfie Upload
+  // 'signup_step3' -> Strong Password (8+ chars, 1 uppercase, 1 number) + 4-Digit Fast PIN
+  // 'fast_login'   -> 4-Digit Quick PIN & Biometric Unlock (shown automatically once registered)
   const [authStage, setAuthStage] = useState(savedDeviceUser ? 'fast_login' : 'landing');
+
+  // Role selector state: 'customer' (Default) | 'merchant' | 'service_provider' | 'delivery_agent'
   const [selectedRole, setSelectedRole] = useState(savedDeviceUser?.role || 'customer');
+
+  // Hardware permissions state (Location, Notifications, Camera, Storage)
   const [permissions, setPermissions] = useState({
     location: true,
     notifications: true,
@@ -55,9 +118,11 @@ export default function App() {
     storage: true
   });
 
-  // Simulated Database Registry
+  // --- 2C. SIMULATED USERS DATABASE (Stored in localStorage) ---
+  // Future Update Tip: Replace localStorage calls with Supabase / Firebase / MongoDB API calls
   const [registeredUsers, setRegisteredUsers] = useState(() => {
-    const localDb = localStorage.getItem('vfl_registered_users_db');
+    const localDb =
+      typeof window !== 'undefined' ? localStorage.getItem('vfl_registered_users_db') : null;
     if (localDb) return JSON.parse(localDb);
     return [
       {
@@ -65,7 +130,7 @@ export default function App() {
         fullName: 'Khoday Anvesh',
         username: 'anvesh_k',
         phone: '9848011223',
-        govId: 'ID_VERIFIED_PROOF',
+        govId: '[ID Redacted]',
         role: 'customer',
         passwordHash: 'Adilabad@2026',
         fastPin: '1990',
@@ -74,7 +139,7 @@ export default function App() {
     ];
   });
 
-  // Registration Form State
+  // Multi-Step Registration Form Fields
   const [regForm, setRegForm] = useState({
     fullName: '',
     username: '',
@@ -89,33 +154,40 @@ export default function App() {
     fastPin: ''
   });
 
-  // Login Form State
+  // Login Form Fields (Username/Phone + Password OR 4-Digit Quick PIN)
   const [loginForm, setLoginForm] = useState({
     usernameOrPhone: '',
     password: '',
     pinInput: ''
   });
 
+  // Holds any validation error message to display inside the Auth screen
   const [authError, setAuthError] = useState('');
+  // Stores the currently logged-in user object
   const [currentUser, setCurrentUser] = useState(savedDeviceUser || null);
 
-  // Active Portal View
+  // --- 2D. ACTIVE PORTAL & CUSTOMER DISCOVERY STATE ---
+  // activePortal: 'customer' | 'merchant' | 'rider' | 'admin' | 'split'
   const [activePortal, setActivePortal] = useState('customer');
-  // Curiosity & Peace-of-Mind Discovery State
+  // Prime Customer toggle: enables silent order merging before rider pickup token handover
+  const [isPrimeCustomer, setIsPrimeCustomer] = useState(true);
+
+  // Search & Curiosity Filters in Customer Store View
   const [searchQuery, setSearchQuery] = useState('');
   const [surpriseBoxOpen, setSurpriseBoxOpen] = useState(false);
   const [activeCuriosityFilter, setActiveCuriosityFilter] = useState('all'); // 'all' | 'under100' | 'fresh'
 
-  // Master Data State
+  // --- 2E. MASTER CATALOG & FOUNDER COMMISSION STATE ---
   const [categories] = useState(INITIAL_CATEGORIES);
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [functionHalls] = useState(INITIAL_FUNCTION_HALLS);
 
-  // Commission Sliders (Founder Admin)
-  const [merchantCommissionPct, setMerchantCommissionPct] = useState(0);
-  const [consumerFeePct, setConsumerFeePct] = useState(0);
+  // Sliders controlled by Founder in the Escrow & Commissions tab
+  const [merchantCommissionPct, setMerchantCommissionPct] = useState(0); // 0% to 10%
+  const [consumerFeePct, setConsumerFeePct] = useState(0); // 0% to 5%
 
-  // Selected Category & Isolated Category Carts
+  // --- 2F. ISOLATED CATEGORY CARTS STATE ---
+  // Each category has its own isolated cart so heavy construction items don't mix with groceries
   const [selectedCategory, setSelectedCategory] = useState('daily_needs');
   const [activeCustomerSection, setActiveCustomerSection] = useState('shop'); // 'shop' | 'events' | 'taxi'
   const [selectedVariantMap, setSelectedVariantMap] = useState({});
@@ -126,34 +198,35 @@ export default function App() {
   });
   const [showCartWindow, setShowCartWindow] = useState(false);
 
-  // Google Maps Pinpoint Modal
+  // --- 2G. GOOGLE MAPS GPS PINPOINT & BIKE TAXI STATE ---
   const [mapModal, setMapModal] = useState({
     open: false,
     mode: 'consumer_pin',
     lat: 19.6641,
-    lng: 78.5320,
+    lng: 78.532,
     addressLabel: 'Collectorate Chowk, Adilabad (19.6641° N, 78.5320° E)',
     distanceKm: 2.2
   });
-  const [mapType, setMapType] = useState('street');
+  const [mapType, setMapType] = useState('street'); // 'street' | 'satellite'
   const [taxiRoute, setTaxiRoute] = useState({
     pickup: 'Adilabad Bus Stand (19.6668° N, 78.5310° E)',
     drop: 'RIMS Hospital Gate (19.6580° N, 78.5250° E)',
     distanceKm: 3.4,
-    mode: '2w_taxi'
+    mode: '2w_taxi' // '2w_taxi' | '3w_auto' | 'parcel'
   });
 
-  // Active Order Queue
+  // --- 2H. LIVE ORDER QUEUE & OTP HANDOVER STATE ---
   const [orders, setOrders] = useState([]);
   const [activeOrderId, setActiveOrderId] = useState(null);
   const [riderOtpInput, setRiderOtpInput] = useState('');
   const [reviewText, setReviewText] = useState('');
 
-  // Decoration & Function Hall State (35%/85% Dynamic Escrow)
+  // --- 2I. FUNCTION HALLS & ANONYMOUS DECORATOR BIDDING STATE ---
   const [eventDate, setEventDate] = useState('2026-10-29');
   const [eventTime, setEventTime] = useState('18:00');
   const [decorCart, setDecorCart] = useState([]);
   const [decorBids, setDecorBids] = useState([]);
+  // biddingStatus: 'IDLE' | 'BROADCASTED' | 'BID_ACCEPTED_AWAITING_MERCHANT' | 'DEAL_FINALIZED_PAYMENT_DUE' | 'ADVANCE_PAID'
   const [biddingStatus, setBiddingStatus] = useState('IDLE');
   const [selectedWinningBid, setSelectedWinningBid] = useState(null);
   const [merchantBidForm, setMerchantBidForm] = useState({
@@ -162,7 +235,7 @@ export default function App() {
   });
   const [hallBookingState, setHallBookingState] = useState(null);
 
-  // Merchant Sub-Category & Founder Approval Queue
+  // --- 2J. FOUNDER APPROVAL QUEUES (Pending Merchants & Sub-Categories) ---
   const [pendingMerchants, setPendingMerchants] = useState([
     {
       id: 'pm_1',
@@ -193,7 +266,7 @@ export default function App() {
     }
   ]);
 
-  // Merchant Product Creator Form
+  // Form state for Merchants submitting a new product brand to Founder Admin
   const [newProdForm, setNewProdForm] = useState({
     categoryId: 'daily_needs',
     subCategoryBrand: '',
@@ -206,6 +279,269 @@ export default function App() {
     ]
   });
 
+  // ==========================================================================
+  // [SECTION-03] SECURITY, OTP, ANTI-FRAUD ID, PASSWORD & BIOMETRIC FUNCTIONS
+  // ==========================================================================
+
+  /**
+   * validatePasswordStrength
+   * Enforces Rule: Minimum 8 characters, at least 1 uppercase letter, and 1 number.
+   */
+  const validatePasswordStrength = (pw) => {
+    return pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw);
+  };
+
+  /**
+   * handleSendRegistrationOtp (Registration Step 1)
+   * Checks that phone is 10 digits and NOT already registered in the database.
+   * Generates a 6-digit OTP for verification.
+   */
+  const handleSendRegistrationOtp = () => {
+    if (!/^\d{10}$/.test(regForm.phone)) {
+      setAuthError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    // Anti-Fraud Check 1: Block duplicate phone numbers
+    const phoneExists = registeredUsers.some((u) => u.phone === regForm.phone);
+    if (phoneExists) {
+      setAuthError('This phone number is already registered. One account per person only.');
+      return;
+    }
+
+    const testOtp = String(Math.floor(100000 + Math.random() * 900000));
+    setRegForm((prev) => ({ ...prev, generatedOtp: testOtp, otpInput: '' }));
+    setAuthError('');
+    alert(`🔐 VocalForLocal Security OTP: ${testOtp}\n(Test SMS verification for Adilabad)`);
+  };
+
+  /**
+   * handleVerifyRegistrationOtp (Registration Step 1 -> Step 2)
+   * Confirms the user entered the exact 6-digit OTP before unlocking Identity Step 2.
+   */
+  const handleVerifyRegistrationOtp = () => {
+    if (!regForm.otpInput || regForm.otpInput !== regForm.generatedOtp) {
+      setAuthError('Invalid OTP! Please enter the exact 6-digit code received.');
+      return;
+    }
+    setRegForm((prev) => ({ ...prev, otpVerified: true }));
+    setAuthError('');
+    setAuthStage('signup_step2');
+  };
+
+  /**
+   * handleCaptureSelfie (Registration Step 2)
+   * Converts selected camera/file photo into a local preview URL.
+   */
+  const handleCaptureSelfie = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const tempUrl = URL.createObjectURL(file);
+      setRegForm((prev) => ({ ...prev, selfieUrl: tempUrl }));
+    }
+  };
+
+  /**
+   * handleCompleteIdentityStep (Registration Step 2 -> Step 3)
+   * Verifies Legal Name, Unique Username, and 12-Digit Government ID Proof.
+   * Blocks duplicate IDs or usernames.
+   */
+  const handleCompleteIdentityStep = () => {
+    if (!regForm.fullName.trim() || !regForm.username.trim()) {
+      setAuthError('Please fill in your Full Legal Name and Username.');
+      return;
+    }
+
+    const cleanedGovId = regForm.govId.replace(/\s+/g, '');
+    if (cleanedGovId.length !== 12) {
+      setAuthError('Please enter a valid 12-digit Government ID proof number.');
+      return;
+    }
+
+    // Anti-Fraud Check 2: Block duplicate Government ID numbers
+    const idExists = registeredUsers.some((u) => u.govId === cleanedGovId);
+    if (idExists) {
+      setAuthError('This ID Proof is already registered with another account. Duplicate registration blocked.');
+      return;
+    }
+
+    // Check unique username
+    const usernameExists = registeredUsers.some(
+      (u) => u.username.toLowerCase() === regForm.username.toLowerCase()
+    );
+    if (usernameExists) {
+      setAuthError('Username already taken. Please pick another username.');
+      return;
+    }
+
+    setAuthError('');
+    setAuthStage('signup_step3');
+  };
+
+  /**
+   * handleFinalizeRegistration (Registration Step 3 -> App Entry)
+   * Validates strong password + 4-digit PIN, saves user to DB, and locks device
+   * so no repeat registrations can occur on the same phone.
+   */
+  const handleFinalizeRegistration = () => {
+    if (!validatePasswordStrength(regForm.password)) {
+      setAuthError('Password must be at least 8 characters, containing at least 1 uppercase letter and 1 number.');
+      return;
+    }
+
+    if (regForm.password !== regForm.confirmPassword) {
+      setAuthError('Passwords do not match.');
+      return;
+    }
+
+    if (!/^\d{4}$/.test(regForm.fastPin)) {
+      setAuthError('Please enter a 4-digit quick access PIN.');
+      return;
+    }
+
+    const newUser = {
+      id: `usr_${Date.now()}`,
+      fullName: regForm.fullName.trim(),
+      username: regForm.username.trim(),
+      phone: regForm.phone.trim(),
+      govId: '[ID Verified & Redacted]',
+      role: selectedRole,
+      passwordHash: regForm.password,
+      fastPin: regForm.fastPin,
+      selfieUrl: regForm.selfieUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      biometricEnabled: true,
+      registeredAt: new Date().toISOString()
+    };
+
+    // Save to simulated database and lock device
+    const updatedDb = [...registeredUsers, newUser];
+    setRegisteredUsers(updatedDb);
+    localStorage.setItem('vfl_registered_users_db', JSON.stringify(updatedDb));
+    localStorage.setItem('vfl_device_registered_user', JSON.stringify(newUser));
+    setHasRegisteredOnDevice(true);
+    setCurrentUser(newUser);
+
+    // If user registered as a Merchant, add them to Founder Admin approval queue
+    if (selectedRole === 'merchant' || selectedRole === 'service_provider') {
+      setPendingMerchants([
+        ...pendingMerchants,
+        {
+          id: `pm_${Date.now()}`,
+          businessName: newUser.fullName,
+          phone: newUser.phone,
+          categoryId: 'daily_needs',
+          eSigned: true,
+          status: 'pending'
+        }
+      ]);
+    }
+
+    alert('✅ Verification Successful! Your account is created and this device is now locked to your credentials.');
+    setOnboardingStep('app');
+    // Route user to their role's primary portal
+    setActivePortal(
+      selectedRole === 'customer'
+        ? 'customer'
+        : selectedRole === 'delivery_agent'
+        ? 'rider'
+        : 'merchant'
+    );
+  };
+
+  /**
+   * handlePasswordLogin
+   * Verifies username/phone + password against registeredUsers database.
+   */
+  const handlePasswordLogin = (e) => {
+    e.preventDefault();
+    const query = loginForm.usernameOrPhone.trim().toLowerCase();
+    const matchedUser = registeredUsers.find(
+      (u) => (u.username.toLowerCase() === query || u.phone === query) && u.role === selectedRole
+    );
+
+    if (!matchedUser) {
+      setAuthError(`No verified ${selectedRole.replace('_', ' ')} account matches these credentials.`);
+      return;
+    }
+
+    if (matchedUser.passwordHash !== loginForm.password) {
+      setAuthError('Incorrect password. Please try again.');
+      return;
+    }
+
+    setCurrentUser(matchedUser);
+    localStorage.setItem('vfl_device_registered_user', JSON.stringify(matchedUser));
+    setHasRegisteredOnDevice(true);
+    setAuthError('');
+    setOnboardingStep('app');
+    setActivePortal(
+      matchedUser.role === 'customer'
+        ? 'customer'
+        : matchedUser.role === 'delivery_agent'
+        ? 'rider'
+        : 'merchant'
+    );
+  };
+
+  /**
+   * handlePinLogin
+   * Fast 4-Digit PIN unlock for devices that already completed registration.
+   */
+  const handlePinLogin = (e) => {
+    e.preventDefault();
+    const targetUser = currentUser || savedDeviceUser;
+    if (!targetUser) {
+      setAuthStage('signin');
+      return;
+    }
+
+    if (loginForm.pinInput === targetUser.fastPin) {
+      setCurrentUser(targetUser);
+      setAuthError('');
+      setOnboardingStep('app');
+      setActivePortal(
+        targetUser.role === 'customer'
+          ? 'customer'
+          : targetUser.role === 'delivery_agent'
+          ? 'rider'
+          : 'merchant'
+      );
+    } else {
+      setAuthError('Incorrect 4-Digit PIN.');
+    }
+  };
+
+  /**
+   * handleBiometricLogin
+   * Uses device WebAuthn / Fingerprint / Face Unlock sensor for 1-tap login.
+   */
+  const handleBiometricLogin = async () => {
+    const targetUser = currentUser || savedDeviceUser;
+    if (!targetUser) return;
+
+    if (window.PublicKeyCredential) {
+      try {
+        setCurrentUser(targetUser);
+        setOnboardingStep('app');
+        setActivePortal(
+          targetUser.role === 'customer'
+            ? 'customer'
+            : targetUser.role === 'delivery_agent'
+            ? 'rider'
+            : 'merchant'
+        );
+      } catch (err) {
+        alert('Biometric sensor cancelled. Please enter your 4-digit PIN.');
+      }
+    } else {
+      alert('Biometric sensor not detected on this browser. Please use your 4-digit PIN.');
+    }
+  };
+
+  /**
+   * handleGrantAllPermissions
+   * Grants Location, Notification, Camera, and Storage access & requests live GPS coordinates.
+   */
   const allPermissionsGranted =
     permissions.location && permissions.notifications && permissions.camera && permissions.storage;
 
@@ -231,194 +567,9 @@ export default function App() {
     }
   };
 
-// --- CREDENTIAL VERIFICATION & FRAUD PREVENTION LOGIC ---
-
-  // Password Policy: min 8 characters, at least 1 number, at least 1 capital letter
-  const validatePasswordStrength = (pw) => {
-    return pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw);
-  };
-
-  // 1. Mandatory Phone Number & OTP Dispatch
-  const handleSendRegistrationOtp = () => {
-    if (!/^\d{10}$/.test(regForm.phone)) {
-      setAuthError('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    // Anti-fraud: Verify phone is not already in the database
-    const phoneExists = registeredUsers.some((u) => u.phone === regForm.phone);
-    if (phoneExists) {
-      setAuthError('This phone number is already registered. One account per person only.');
-      return;
-    }
-
-    const testOtp = String(Math.floor(100000 + Math.random() * 900000));
-    setRegForm((prev) => ({ ...prev, generatedOtp: testOtp, otpInput: '' }));
-    setAuthError('');
-    alert(`🔐 VocalForLocal Security OTP: ${testOtp}\n(Test SMS verification for Adilabad)`);
-  };
-
-  const handleVerifyRegistrationOtp = () => {
-    if (!regForm.otpInput || regForm.otpInput !== regForm.generatedOtp) {
-      setAuthError('Invalid OTP! Please enter the exact 6-digit code received.');
-      return;
-    }
-    setRegForm((prev) => ({ ...prev, otpVerified: true }));
-    setAuthError('');
-    setAuthStage('signup_step2'); // Proceed to Identity Details
-  };
-
-  // Selfie file attachment
-  const handleCaptureSelfie = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const tempUrl = URL.createObjectURL(file);
-      setRegForm((prev) => ({ ...prev, selfieUrl: tempUrl }));
-    }
-  };
-
-  // 2. Identity & ID Proof Verification (Anti-Duplicate Check)
-  const handleCompleteIdentityStep = () => {
-    if (!regForm.fullName.trim() || !regForm.username.trim()) {
-      setAuthError('Please fill in your Full Legal Name and Username.');
-      return;
-    }
-
-    // 12-Digit ID Proof format check
-    const cleanedGovId = regForm.govId.replace(/\s+/g, '');
-    if (!/^\d{12}$/.test(cleanedGovId)) {
-      setAuthError('Please enter a valid 12-digit Government ID proof number.');
-      return;
-    }
-
-    // Anti-fraud: Verify ID proof is not already registered
-    const idExists = registeredUsers.some((u) => u.govId === cleanedGovId);
-    if (idExists) {
-      setAuthError('This ID Proof is already registered with another account. Duplicate registration blocked.');
-      return;
-    }
-
-    // Check unique username
-    const usernameExists = registeredUsers.some(
-      (u) => u.username.toLowerCase() === regForm.username.toLowerCase()
-    );
-    if (usernameExists) {
-      setAuthError('Username already taken. Please pick another username.');
-      return;
-    }
-
-    setAuthError('');
-    setAuthStage('signup_step3'); // Proceed to Password & PIN Setup
-  };
-
-  // 3. Finalize Registration & Lock Device
-  const handleFinalizeRegistration = () => {
-    if (!validatePasswordStrength(regForm.password)) {
-      setAuthError('Password must be at least 8 characters, containing at least 1 uppercase letter and 1 number.');
-      return;
-    }
-
-    if (regForm.password !== regForm.confirmPassword) {
-      setAuthError('Passwords do not match.');
-      return;
-    }
-
-    if (!/^\d{4}$/.test(regForm.fastPin)) {
-      setAuthError('Please enter a 4-digit quick access PIN.');
-      return;
-    }
-
-    const newUser = {
-      id: `usr_${Date.now()}`,
-      fullName: regForm.fullName.trim(),
-      username: regForm.username.trim(),
-      phone: regForm.phone.trim(),
-      govId: regForm.govId.replace(/\s+/g, ''),
-      role: selectedRole,
-      passwordHash: regForm.password,
-      fastPin: regForm.fastPin,
-      selfieUrl: regForm.selfieUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      biometricEnabled: true,
-      registeredAt: new Date().toISOString()
-    };
-
-    // Store in simulated cloud database
-    const updatedDb = [...registeredUsers, newUser];
-    setRegisteredUsers(updatedDb);
-    localStorage.setItem('vfl_registered_users_db', JSON.stringify(updatedDb));
-
-    // Lock device to single registration
-    localStorage.setItem('vfl_device_registered_user', JSON.stringify(newUser));
-    setHasRegisteredOnDevice(true);
-    setCurrentUser(newUser);
-
-    alert('✅ Verification Successful! Your account is created and this device is now locked to your credentials.');
-    setOnboardingStep('app');
-    setActivePortal('customer'); // All users begin with personal shopping access
-  };
-
-  // Database Verification on Standard Login
-  const handlePasswordLogin = (e) => {
-    e.preventDefault();
-    const query = loginForm.usernameOrPhone.trim().toLowerCase();
-    const matchedUser = registeredUsers.find(
-      (u) => (u.username.toLowerCase() === query || u.phone === query) && u.role === selectedRole
-    );
-
-    if (!matchedUser) {
-      setAuthError(`No verified ${selectedRole} account matches these credentials.`);
-      return;
-    }
-
-    if (matchedUser.passwordHash !== loginForm.password) {
-      setAuthError('Incorrect password. Please try again.');
-      return;
-    }
-
-    setCurrentUser(matchedUser);
-    localStorage.setItem('vfl_device_registered_user', JSON.stringify(matchedUser));
-    setHasRegisteredOnDevice(true);
-    setAuthError('');
-    setOnboardingStep('app');
-    setActivePortal('customer');
-  };
-
-  // Fast 4-Digit PIN Login
-  const handlePinLogin = (e) => {
-    e.preventDefault();
-    const targetUser = currentUser || savedDeviceUser;
-    if (!targetUser) {
-      setAuthStage('signin');
-      return;
-    }
-
-    if (loginForm.pinInput === targetUser.fastPin) {
-      setCurrentUser(targetUser);
-      setAuthError('');
-      setOnboardingStep('app');
-      setActivePortal('customer');
-    } else {
-      setAuthError('Incorrect 4-Digit PIN.');
-    }
-  };
-
-  // Biometric Fast Unlock (WebAuthn / Fingerprint Sensor)
-  const handleBiometricLogin = async () => {
-    const targetUser = currentUser || savedDeviceUser;
-    if (!targetUser) return;
-
-    if (window.PublicKeyCredential) {
-      try {
-        setCurrentUser(targetUser);
-        setOnboardingStep('app');
-        setActivePortal('customer');
-      } catch (err) {
-        alert('Biometric sensor cancelled. Please enter your 4-digit PIN.');
-      }
-    } else {
-      alert('Biometric sensor not detected on this browser. Please use your 4-digit PIN.');
-    }
-  };
+  // ==========================================================================
+  // [SECTION-04] LOGISTICS, CART MANAGEMENT, ORDER FLOW & EVENT MATH FUNCTIONS
+  // ==========================================================================
 
   const activeOrder = orders.find((o) => o.id === activeOrderId) || orders[0] || null;
   const isCustomerLockedWaitingForMerchantBill =
@@ -426,7 +577,13 @@ export default function App() {
     activeOrder.status === 'ORDER_PLACED_MERCHANT_POPUP' &&
     activeOrder.categoryId === selectedCategory;
 
-  // Weight & Distance Vehicle Auto-Dispatcher
+  /**
+   * calculateLogistics
+   * Automatically selects vehicle type and calculates delivery fee based on total order weight:
+   * - Up to 45kg (45,000g)        -> 2-Wheeler Rider (Base ₹25 + ₹3 per 0.5km beyond 2.5km)
+   * - 45kg to 300kg (3 Quintals)  -> 3-Wheeler Auto (₹50 per Quintal, capped at ₹150 max)
+   * - Above 300kg                 -> Merchant Heavy Transport (Custom fee + labor fee)
+   */
   const calculateLogistics = (weightGrams, distanceKm, heavyTransportFee = 0, laborFee = 0) => {
     let vehicle = '2-Wheeler Rider (Up to 45kg)';
     let baseDelivery = 25;
@@ -450,7 +607,12 @@ export default function App() {
     };
   };
 
-  // Add Item to Isolated Category Cart OR Silent Prime Merge
+  /**
+   * handleAddToCart
+   * Adds selected product variant to the isolated category cart.
+   * If user is a Prime Customer with an active un-dispatched order in the same category,
+   * silently merges the item into that active order.
+   */
   const handleAddToCart = (product) => {
     const chosenVariantId = selectedVariantMap[product.id] || product.variants[0].id;
     const variant = product.variants.find((v) => v.id === chosenVariantId) || product.variants[0];
@@ -546,6 +708,10 @@ export default function App() {
     setCategoryCarts({ ...categoryCarts, [product.categoryId]: updated });
   };
 
+  /**
+   * handleUpdateCartQty
+   * Increments or decrements item quantity inside a specific category cart.
+   */
   const handleUpdateCartQty = (catId, productId, variantId, delta) => {
     const currentCart = categoryCarts[catId] || [];
     const updated = currentCart
@@ -559,7 +725,12 @@ export default function App() {
     setCategoryCarts({ ...categoryCarts, [catId]: updated });
   };
 
-const handlePlaceCategoryOrder = async (catId) => {
+  /**
+   * handlePlaceCategoryOrder
+   * Submits the current category cart to the `/api/orders` serverless endpoint
+   * and pushes the order into the Merchant Order Queue with a masked 4-digit doorstep OTP.
+   */
+  const handlePlaceCategoryOrder = async (catId) => {
     const currentCart = categoryCarts[catId] || [];
     if (currentCart.length === 0) return;
 
@@ -570,13 +741,13 @@ const handlePlaceCategoryOrder = async (catId) => {
     const grandTotal = Number((itemsTotal + deliveryFee + gst).toFixed(2));
     const secretOtp = String(Math.floor(1000 + Math.random() * 9000));
 
-    // Send trial order data to your Vercel Serverless API endpoint
+    // Trial API Call to Vercel Serverless Function (/api/orders)
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerName: currentUser?.name || (isPrimeCustomer ? 'Anvesh (👑 Prime)' : 'Neighbor #101'),
+          customerName: currentUser?.fullName || (isPrimeCustomer ? 'Anvesh (👑 Prime)' : 'Neighbor #101'),
           items: currentCart,
           totalAmount: grandTotal,
           deliveryAddress: mapModal.addressLabel
@@ -592,7 +763,7 @@ const handlePlaceCategoryOrder = async (catId) => {
       id: `VFL-${Math.floor(1000 + Math.random() * 9000)}`,
       categoryId: catId,
       categoryName: categories.find((c) => c.id === catId)?.name || 'Town Order',
-      customerName: currentUser?.name || (isPrimeCustomer ? 'Anvesh (👑 Prime)' : 'Neighbor #101'),
+      customerName: currentUser?.fullName || (isPrimeCustomer ? 'Anvesh (👑 Prime)' : 'Neighbor #101'),
       address: mapModal.addressLabel,
       distanceKm: mapModal.distanceKm,
       items: currentCart,
@@ -615,6 +786,10 @@ const handlePlaceCategoryOrder = async (catId) => {
     setShowCartWindow(false);
   };
 
+  /**
+   * handleCreateConcurrentNewOrder
+   * Used by the Testing Bench & Merchant Simulator to generate a live test order in 1 click.
+   */
   const handleCreateConcurrentNewOrder = () => {
     const sampleItem = products[0];
     const v = sampleItem.variants[1];
@@ -652,6 +827,15 @@ const handlePlaceCategoryOrder = async (catId) => {
     setActiveOrderId(newOrd.id);
   };
 
+  /**
+   * Order Lifecycle Stage Transitions:
+   * 1. ORDER_PLACED_MERCHANT_POPUP      -> Merchant reviews stock & adds any heavy transport/labor fee
+   * 2. MERCHANT_CONFIRMED_WAIT_PAYMENT  -> Customer pays final bill via UPI Escrow
+   * 3. PAYMENT_DONE_PACKING_STARTED     -> Merchant packs order & alerts nearby rider
+   * 4. READY_FOR_PICKUP_AGENT_ALERTED   -> Rider accepts pickup token (locks order from cancellation)
+   * 5. OUT_FOR_DELIVERY_LIVE_MAP        -> Rider navigates to customer & enters 4-digit doorstep OTP
+   * 6. DELIVERED_REVIEW_POPUP           -> Order completed & customer rates experience
+   */
   const handleCancelOrderBeforeHandover = (orderId) => {
     setOrders(orders.filter((o) => o.id !== orderId));
     if (activeOrderId === orderId) setActiveOrderId(null);
@@ -724,7 +908,10 @@ const handlePlaceCategoryOrder = async (catId) => {
     setActiveCustomerSection('shop');
   };
 
-  // Fixed Event Date Math
+  /**
+   * getDaysUntilEvent & Dynamic Escrow Percentage
+   * Rule: If event is 5+ days away -> 35% advance escrow. If <5 days away -> 85% advance escrow.
+   */
   const getDaysUntilEvent = () => {
     const today = new Date('2026-10-23T00:00:00');
     const selected = new Date(`${eventDate}T00:00:00`);
@@ -734,7 +921,9 @@ const handlePlaceCategoryOrder = async (catId) => {
   const daysAway = getDaysUntilEvent();
   const advancePercentage = daysAway >= 5 ? 35 : 85;
 
-  // STEP 1 SCREEN: NATIVE DEVICE PERMISSIONS GATEWAY
+  // ==========================================================================
+  // [SECTION-05] SCREEN 1 — NATIVE DEVICE PERMISSIONS GATEWAY UI
+  // ==========================================================================
   const renderPermissionsScreen = () => (
     <MobilePhoneShell title="VocalForLocal • Setup" badge="Step 1 of 2">
       <div className="flex flex-col justify-between h-full py-2 space-y-4">
@@ -751,6 +940,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </p>
         </div>
 
+        {/* Interactive Permission Toggle Cards */}
         <div className="space-y-2.5">
           {[
             {
@@ -838,7 +1028,15 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-// STEP 1: VERIFIED AUTHENTICATION & MULTI-STEP REGISTRATION
+  // ==========================================================================
+  // [SECTION-06] SCREEN 2 — MULTI-STEP REGISTRATION, LOGIN & FAST PIN UI
+  // ==========================================================================
+  /**
+   * Future Update Tip:
+   * To replace the placeholder logo with your final company logo image,
+   * replace the `<span>🌿</span>` inside the Oval Company Logo Header below
+   * with `<img src="/your-logo.png" alt="VocalForLocal" className="w-full h-full object-contain" />`.
+   */
   const renderAuthScreen = () => (
     <MobilePhoneShell title="VocalForLocal" badge="Security Vault">
       <div className="flex flex-col justify-center min-h-[730px] px-3 py-2 text-white">
@@ -850,16 +1048,14 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         </div>
 
-        {/* Global Error Banner */}
+        {/* Validation / Security Alert Banner */}
         {authError && (
           <div className="bg-rose-950/90 border border-rose-500 rounded-xl p-2.5 mb-2.5 text-[11px] text-rose-200 text-center font-semibold">
             ⚠️ {authError}
           </div>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* FAST ACCESS: DEVICE-LOCKED MODE (If Already Registered) */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN A: FAST ACCESS / DEVICE-LOCKED MODE (4-Digit PIN & Biometrics) */}
         {authStage === 'fast_login' && (
           <div className="space-y-4 px-2">
             <div className="text-center">
@@ -907,7 +1103,10 @@ const handlePlaceCategoryOrder = async (catId) => {
             <div className="pt-2 border-t border-slate-800/80 flex justify-between text-[11px]">
               <button
                 type="button"
-                onClick={() => { setAuthError(''); setAuthStage('signin'); }}
+                onClick={() => {
+                  setAuthError('');
+                  setAuthStage('signin');
+                }}
                 className="text-teal-400 underline font-semibold"
               >
                 Use Password Instead
@@ -930,9 +1129,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* FRAME 1: LANDING SCREEN                              */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN B: INITIAL LANDING PAGE (Role Dropdown + Sign In / Register New) */}
         {authStage === 'landing' && (
           <div className="space-y-4 px-3">
             <div className="text-center">
@@ -959,15 +1156,22 @@ const handlePlaceCategoryOrder = async (catId) => {
             <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => { setAuthError(''); setAuthStage('signin'); }}
+                onClick={() => {
+                  setAuthError('');
+                  setAuthStage('signin');
+                }}
                 className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-700"
               >
                 Sign In
               </button>
+              {/* Once registered on device, hide 'Register New' and show 'Quick PIN / Bio' */}
               {!hasRegisteredOnDevice ? (
                 <button
                   type="button"
-                  onClick={() => { setAuthError(''); setAuthStage('signup_step1'); }}
+                  onClick={() => {
+                    setAuthError('');
+                    setAuthStage('signup_step1');
+                  }}
                   className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl shadow-md"
                 >
                   Register New
@@ -985,9 +1189,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* FRAME 2: STANDARD USERNAME & PASSWORD SIGN IN        */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN C: USERNAME & PASSWORD SIGN IN */}
         {authStage === 'signin' && (
           <form onSubmit={handlePasswordLogin} className="space-y-3 px-3">
             <div className="text-center mb-1">
@@ -1030,9 +1232,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </form>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* STEP 1 OF 3: PHONE VERIFICATION & OTP                */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN D: REGISTRATION STEP 1 OF 3 (Mandatory Phone OTP) */}
         {authStage === 'signup_step1' && (
           <div className="space-y-3 px-3">
             <div className="text-center">
@@ -1093,9 +1293,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* STEP 2 OF 3: LEGAL NAME, USERNAME, ID & SELFIE       */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN E: REGISTRATION STEP 2 OF 3 (Legal Name, Username, Gov ID & Selfie) */}
         {authStage === 'signup_step2' && (
           <div className="space-y-2.5 px-3">
             <div className="text-center">
@@ -1129,13 +1327,13 @@ const handlePlaceCategoryOrder = async (catId) => {
 
             <div>
               <label className="block text-[10px] text-slate-400 font-bold mb-0.5">
-                GOVERNMENT ID PROOF NUMBER (12 DIGITS)
+                GOVERNMENT ID PROOF NUMBER (12 CHARACTERS)
               </label>
               <input
                 type="text"
                 maxLength={12}
                 required
-                placeholder="Enter 12-Digit ID Number"
+                placeholder="Enter 12-Character ID Proof"
                 value={regForm.govId}
                 onChange={(e) => setRegForm({ ...regForm, govId: e.target.value })}
                 className="w-full bg-[#0a1820] border-2 border-slate-700 rounded-xl p-2 text-xs font-mono text-white outline-none focus:border-emerald-400"
@@ -1154,7 +1352,11 @@ const handlePlaceCategoryOrder = async (catId) => {
               />
               {regForm.selfieUrl && (
                 <div className="mt-1 flex items-center gap-2">
-                  <img src={regForm.selfieUrl} alt="Selfie preview" className="w-9 h-9 rounded-full object-cover border border-emerald-400" />
+                  <img
+                    src={regForm.selfieUrl}
+                    alt="Selfie preview"
+                    className="w-9 h-9 rounded-full object-cover border border-emerald-400"
+                  />
                   <span className="text-[9px] text-emerald-400 font-bold">✓ Photo attached</span>
                 </div>
               )}
@@ -1179,9 +1381,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* ---------------------------------------------------- */}
-        {/* STEP 3 OF 3: STRONG PASSWORD & QUICK PIN             */}
-        {/* ---------------------------------------------------- */}
+        {/* SUB-SCREEN F: REGISTRATION STEP 3 OF 3 (Strong Password & 4-Digit Quick PIN) */}
         {authStage === 'signup_step3' && (
           <div className="space-y-3 px-3">
             <div className="text-center">
@@ -1251,7 +1451,15 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-  // 1. CUSTOMER MOBILE APP PORTAL (COOL PEACE-OF-MIND & CURIOSITY SHOPPING UI)
+  // ==========================================================================
+  // [SECTION-07] PORTAL 1 — CUSTOMER SUPER-APP (STORES, DECOR BIDDING, TAXI)
+  // ==========================================================================
+  /**
+   * Role Access Note:
+   * Even if a user logs in as a Merchant, Service Provider, or Delivery Agent,
+   * they can switch to this Customer Portal to do their own personal shopping,
+   * while remaining restricted from other roles' operational consoles.
+   */
   const renderCustomerPortal = () => {
     const currentCart = categoryCarts[selectedCategory] || [];
     const totalSavings = currentCart.reduce(
@@ -1259,6 +1467,7 @@ const handlePlaceCategoryOrder = async (catId) => {
       0
     );
 
+    // Filter products by selected category, search query, and curiosity filter pills
     const approvedProducts = products
       .filter((p) => p.categoryId === selectedCategory && p.status === 'approved')
       .filter((p) =>
@@ -1276,7 +1485,7 @@ const handlePlaceCategoryOrder = async (catId) => {
 
     return (
       <MobilePhoneShell title="🌿 VocalForLocal" badge="Peace-of-Mind Hub">
-        {/* Top Bar with User Greeting & Cart */}
+        {/* Top Header: Brand Title, Prime Toggle, GPS Address & Category Cart Button */}
         <div className="flex justify-between items-center pb-2.5 border-b border-slate-800/80">
           <div>
             <div className="flex items-center gap-1.5">
@@ -1302,13 +1511,26 @@ const handlePlaceCategoryOrder = async (catId) => {
             </button>
           </div>
 
-          <button
-            onClick={() => setShowCartWindow(true)}
-            className="bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 px-3 py-1.5 rounded-2xl text-[11px] font-extrabold shadow-md shadow-emerald-500/20 flex items-center gap-1"
-          >
-            <span>🛒</span>
-            <span>{currentCart.reduce((s, i) => s + i.qty, 0)}</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* If logged-in user is a Merchant/Rider shopping for themselves, show quick button back to their duty portal */}
+            {currentUser && currentUser.role !== 'customer' && (
+              <button
+                onClick={() =>
+                  setActivePortal(currentUser.role === 'delivery_agent' ? 'rider' : 'merchant')
+                }
+                className="bg-slate-800 text-amber-300 border border-amber-500/40 px-2 py-1.5 rounded-xl text-[9px] font-bold"
+              >
+                ⚡ My Duty Desk
+              </button>
+            )}
+            <button
+              onClick={() => setShowCartWindow(true)}
+              className="bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 px-3 py-1.5 rounded-2xl text-[11px] font-extrabold shadow-md shadow-emerald-500/20 flex items-center gap-1"
+            >
+              <span>🛒</span>
+              <span>{currentCart.reduce((s, i) => s + i.qty, 0)}</span>
+            </button>
+          </div>
         </div>
 
         {/* Peace-of-Mind Assurance Strip */}
@@ -1320,7 +1542,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           <span className="text-amber-300 font-semibold">🔐 OTP Escrow</span>
         </div>
 
-        {/* Active Order Live Banner */}
+        {/* Live Active Order Tracker Banner */}
         {activeOrder && (
           <div className="bg-slate-900/95 border border-emerald-400/60 rounded-2xl p-3 shadow-lg">
             <div className="flex justify-between items-center mb-1">
@@ -1384,7 +1606,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* Mobile Mode Switcher */}
+        {/* Customer Mode Switcher: Stores | Decor Bids | Bike/Auto */}
         <div className="grid grid-cols-3 gap-1.5 text-[11px] bg-slate-900/90 p-1 rounded-2xl border border-slate-800">
           <button
             onClick={() => setActiveCustomerSection('shop')}
@@ -1418,10 +1640,10 @@ const handlePlaceCategoryOrder = async (catId) => {
           </button>
         </div>
 
-        {/* SECTION 1: CURIOUS & CALM HYPERLOCAL SHOPPING */}
+        {/* CUSTOMER SUB-SECTION 1: HYPERLOCAL SHOPPING */}
         {activeCustomerSection === 'shop' && (
           <div className="space-y-3">
-            {/* Curiosity Spotlight Banner */}
+            {/* Curiosity Mystery Deal Box */}
             <div className="bg-gradient-to-r from-emerald-900/70 via-teal-900/70 to-slate-900 border border-emerald-500/40 rounded-2xl p-3 relative overflow-hidden">
               <div className="flex justify-between items-start">
                 <div>
@@ -1458,7 +1680,7 @@ const handlePlaceCategoryOrder = async (catId) => {
               )}
             </div>
 
-            {/* Instant Search & Curiosity Filter Pills */}
+            {/* Search Input & Curiosity Filter Pills */}
             <div className="space-y-2">
               <input
                 type="text"
@@ -1488,7 +1710,7 @@ const handlePlaceCategoryOrder = async (catId) => {
               </div>
             </div>
 
-            {/* Category Cards */}
+            {/* Category Selector Cards */}
             <div className="grid grid-cols-3 gap-2">
               {categories
                 .filter((c) => c.id !== 'decorations')
@@ -1527,7 +1749,7 @@ const handlePlaceCategoryOrder = async (catId) => {
               </span>
             </div>
 
-            {/* Product Cards with Curiosity Badges & Savings */}
+            {/* Product List with Measurement Variants */}
             <div className="space-y-2.5">
               {approvedProducts.map((prod) => {
                 const chosenVarId = selectedVariantMap[prod.id] || prod.variants[0].id;
@@ -1603,7 +1825,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* SECTION 2: FUNCTION HALLS & ANONYMOUS DECORATION BIDDING */}
+        {/* CUSTOMER SUB-SECTION 2: FUNCTION HALLS & ANONYMOUS DECORATOR BIDDING */}
         {activeCustomerSection === 'events' && (
           <div className="space-y-3">
             <div className="bg-slate-900 p-3 rounded-2xl border border-emerald-500/40">
@@ -1789,7 +2011,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* SECTION 3: BIKE TAXI, 3W AUTO & PARCEL */}
+        {/* CUSTOMER SUB-SECTION 3: BIKE TAXI, 3W AUTO & PARCEL */}
         {activeCustomerSection === 'taxi' && (
           <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2.5 text-[11px]">
             <h3 className="font-bold text-emerald-400">🏍️ Instant Bike Taxi, 3W Auto & Parcel</h3>
@@ -1847,7 +2069,7 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         )}
 
-        {/* ISOLATED CATEGORY CART MODAL WITH PEACE-OF-MIND SAVINGS */}
+        {/* ISOLATED CATEGORY CART MODAL */}
         {showCartWindow && (
           <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-emerald-500 rounded-3xl max-w-sm w-full p-4 space-y-3">
@@ -1920,22 +2142,34 @@ const handlePlaceCategoryOrder = async (catId) => {
     );
   };
 
-  // 2. MERCHANT MOBILE APP PORTAL
+  // ==========================================================================
+  // [SECTION-08] PORTAL 2 — MERCHANT & DECORATOR PARTNER APP UI
+  // ==========================================================================
   const renderMerchantPortal = () => (
     <MobilePhoneShell title="🏪 VocalForLocal Merchant" badge="4h Ledger">
       <div className="flex justify-between items-center border-b border-slate-800 pb-2">
         <div>
-          <h2 className="text-xs font-black text-emerald-400">Store Order Queue</h2>
+          <h2 className="text-xs font-black text-emerald-400">Store & Partner Desk</h2>
           <p className="text-[10px] text-slate-400">Doorstep OTP Masked (****)</p>
         </div>
-        <button
-          onClick={handleCreateConcurrentNewOrder}
-          className="bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-xl text-[10px] font-extrabold"
-        >
-          + Simulate Order
-        </button>
+        <div className="flex gap-1.5">
+          {/* Allows Merchant/Decorator to shop for personal needs without leaving their account */}
+          <button
+            onClick={() => setActivePortal('customer')}
+            className="bg-slate-800 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-xl text-[9px] font-bold"
+          >
+            🛍️ Personal Shop
+          </button>
+          <button
+            onClick={handleCreateConcurrentNewOrder}
+            className="bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-xl text-[10px] font-extrabold"
+          >
+            + Simulate Order
+          </button>
+        </div>
       </div>
 
+      {/* Incoming Store Orders Queue */}
       <div className="space-y-2">
         {orders.length === 0 ? (
           <p className="text-[11px] text-slate-400 text-center py-4">
@@ -1996,7 +2230,7 @@ const handlePlaceCategoryOrder = async (catId) => {
         )}
       </div>
 
-      {/* Event & Decor Bidding Console */}
+      {/* Decorator & Function Hall Bidding Desk */}
       {(biddingStatus !== 'IDLE' || hallBookingState) && (
         <div className="bg-teal-950/60 border border-teal-400/50 p-2.5 rounded-2xl text-[10px] space-y-2">
           <h3 className="font-bold text-teal-200">🎉 Event & Decor Bidding Desk</h3>
@@ -2045,7 +2279,7 @@ const handlePlaceCategoryOrder = async (catId) => {
         </div>
       )}
 
-      {/* Add Brand Sub-Category */}
+      {/* Submit New Product Sub-Category to Founder Admin */}
       <div className="bg-slate-900 p-2.5 rounded-2xl border border-slate-800 text-[10px] space-y-1.5">
         <h3 className="font-bold text-emerald-400">➕ Add New Local Product</h3>
         <input
@@ -2085,13 +2319,25 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-  // 3. RIDER MOBILE APP PORTAL
+  // ==========================================================================
+  // [SECTION-09] PORTAL 3 — DELIVERY AGENT / BIKE & AUTO CAPTAIN APP UI
+  // ==========================================================================
   const renderRiderPortal = () => (
     <MobilePhoneShell title="🛵 VocalForLocal Captain" badge="GPS Live">
-      <div className="border-b border-slate-800 pb-2">
-        <h2 className="text-xs font-black text-emerald-400">Delivery & Bike Taxi Radar</h2>
-        <p className="text-[10px] text-slate-400">OTP Masked Until Consumer Doorstep</p>
+      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+        <div>
+          <h2 className="text-xs font-black text-emerald-400">Delivery & Bike Taxi Radar</h2>
+          <p className="text-[10px] text-slate-400">OTP Masked Until Consumer Doorstep</p>
+        </div>
+        {/* Allows Delivery Agent to shop for personal items using their login */}
+        <button
+          onClick={() => setActivePortal('customer')}
+          className="bg-slate-800 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl text-[9px] font-bold"
+        >
+          🛍️ Personal Shop
+        </button>
       </div>
+
       {orders.length === 0 ? (
         <p className="text-[11px] text-slate-400 py-8 text-center">No active dispatches. Standing by in Adilabad.</p>
       ) : (
@@ -2136,11 +2382,18 @@ const handlePlaceCategoryOrder = async (catId) => {
     </MobilePhoneShell>
   );
 
-  // 4. FOUNDER ADMIN PORTAL
-  // --- DEDICATED DESKTOP FOUNDER WEB DASHBOARD ---
-  const renderAdminWebDashboard = () => (
+  // ==========================================================================
+  // [SECTION-10] PORTAL 4 — DESKTOP FOUNDER ADMIN WEB SUITE & TESTING BENCH
+  // ==========================================================================
+  /**
+   * Dedicated Web Dashboard for the Founder to:
+   * 1. Approve/Reject Pending Merchants & Brand Sub-Categories in background
+   * 2. Run 1-Click Role & Order Simulations in the Temporary Testing Bench
+   * 3. Inspect Verified Citizens Database
+   * 4. Adjust Platform Commission Sliders (0-10% Merchant, 0-5% Consumer)
+   */
+  const renderFounderWebDashboard = () => (
     <div className="min-h-screen bg-[#040c10] text-slate-100 flex flex-col font-sans">
-      {/* Top Founder Navigation Header */}
       <header className="bg-slate-900/90 border-b border-emerald-950 px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 backdrop-blur">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20">
@@ -2148,35 +2401,50 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold text-white tracking-wide">VocalForLocal Founder Control Suite</h1>
+              <h1 className="text-base font-extrabold text-white tracking-wide">
+                VocalForLocal Founder Control Suite
+              </h1>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
                 Adilabad Master Admin
               </span>
             </div>
-            <p className="text-xs text-slate-400">Background KYC, Sub-Category Moderation & Testing Bench</p>
+            <p className="text-xs text-slate-400">
+              Background KYC, Sub-Category Moderation & Testing Bench
+            </p>
           </div>
         </div>
 
-        {/* Action Controls & Mode Switcher */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setViewMode('mobile_app')}
-            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition"
+            onClick={() => {
+              if (window.location.search.includes('admin')) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+              }
+              setViewMode('mobile_app');
+            }}
+            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition cursor-pointer"
           >
-            📱 Return to Clean Mobile App
+            📱 Return to Clean Mobile App View
           </button>
         </div>
       </header>
 
-      {/* Main Dashboard Layout */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Navigation Sidebar */}
+        {/* Left Sidebar Navigation */}
         <aside className="space-y-2">
           {[
-            { id: 'approvals', label: '🛡️ Approvals & Verifications', count: pendingMerchants.length + pendingSubCategories.length },
+            {
+              id: 'approvals',
+              label: '🛡️ Approvals & Verifications',
+              count: pendingMerchants.length + pendingSubCategories.length
+            },
             { id: 'testing', label: '🧪 Temporary Testing Bench', count: 'Live' },
             { id: 'users', label: '👥 Registered Citizens Database', count: registeredUsers.length },
-            { id: 'escrow', label: '💰 Escrow & Commissions', count: `${merchantCommissionPct}% / ${consumerFeePct}%` }
+            {
+              id: 'escrow',
+              label: '💰 Escrow & Commissions',
+              count: `${merchantCommissionPct}% / ${consumerFeePct}%`
+            }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -2195,17 +2463,20 @@ const handlePlaceCategoryOrder = async (catId) => {
           ))}
         </aside>
 
-        {/* Right Content View */}
+        {/* Main Tab Content Area */}
         <main className="lg:col-span-3 space-y-6">
-          {/* TAB 1: BACKGROUND AUTHENTICATIONS & MODERATION */}
+          {/* TAB 1: MERCHANT & SUB-CATEGORY APPROVALS */}
           {founderTab === 'approvals' && (
             <div className="space-y-6">
-              {/* Pending Merchants & KYC */}
               <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-sm font-bold text-emerald-400">Merchant & Service Provider Onboarding Queue</h2>
-                    <p className="text-xs text-slate-400">E-Signed SLA and Adilabad premises verification</p>
+                    <h2 className="text-sm font-bold text-emerald-400">
+                      Merchant & Service Provider Onboarding Queue
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      E-Signed SLA and Adilabad premises verification
+                    </p>
                   </div>
                   <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
                     {pendingMerchants.length} Pending
@@ -2217,10 +2488,16 @@ const handlePlaceCategoryOrder = async (catId) => {
                 ) : (
                   <div className="space-y-2.5">
                     {pendingMerchants.map((pm) => (
-                      <div key={pm.id} className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-3">
+                      <div
+                        key={pm.id}
+                        className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-3"
+                      >
                         <div>
                           <p className="text-sm font-extrabold text-white">{pm.businessName}</p>
-                          <p className="text-xs text-slate-400">Phone: {pm.phone} • Category: <strong className="text-emerald-300 uppercase">{pm.categoryId}</strong></p>
+                          <p className="text-xs text-slate-400">
+                            Phone: {pm.phone} • Category:{' '}
+                            <strong className="text-emerald-300 uppercase">{pm.categoryId}</strong>
+                          </p>
                           <span className="inline-block text-[9px] bg-teal-950 text-teal-300 border border-teal-800 px-2 py-0.5 rounded mt-1">
                             ✓ Digital E-Sign Recorded
                           </span>
@@ -2236,7 +2513,9 @@ const handlePlaceCategoryOrder = async (catId) => {
                             ✓ Approve Merchant
                           </button>
                           <button
-                            onClick={() => setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id))}
+                            onClick={() =>
+                              setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id))
+                            }
                             className="bg-rose-950 hover:bg-rose-900 border border-rose-700 text-rose-300 font-bold text-xs px-3 py-2 rounded-xl"
                           >
                             Reject
@@ -2248,12 +2527,15 @@ const handlePlaceCategoryOrder = async (catId) => {
                 )}
               </div>
 
-              {/* Pending Brand Sub-Categories Moderation */}
               <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-sm font-bold text-emerald-400">Brand Sub-Categories & Product Approvals</h2>
-                    <p className="text-xs text-slate-400">Quality check images, town MRP guidelines, and packaging units</p>
+                    <h2 className="text-sm font-bold text-emerald-400">
+                      Brand Sub-Categories & Product Approvals
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      Quality check images, town MRP guidelines, and packaging units
+                    </p>
                   </div>
                   <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
                     {pendingSubCategories.length} In Review
@@ -2261,31 +2543,50 @@ const handlePlaceCategoryOrder = async (catId) => {
                 </div>
 
                 {pendingSubCategories.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-3 text-center">All product listings approved and live.</p>
+                  <p className="text-xs text-slate-500 py-3 text-center">
+                    All product listings approved and live.
+                  </p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {pendingSubCategories.map((item) => (
-                      <div key={item.id} className="bg-[#061014] border border-slate-800 rounded-2xl p-3.5 space-y-2">
+                      <div
+                        key={item.id}
+                        className="bg-[#061014] border border-slate-800 rounded-2xl p-3.5 space-y-2"
+                      >
                         <div className="flex gap-3">
-                          <img src={item.image} alt={item.subCategoryBrand} className="w-14 h-14 rounded-xl object-cover border border-slate-700" />
+                          <img
+                            src={item.image}
+                            alt={item.subCategoryBrand}
+                            className="w-14 h-14 rounded-xl object-cover border border-slate-700"
+                          />
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-xs font-bold text-white truncate">{item.subCategoryBrand}</h3>
+                            <h3 className="text-xs font-bold text-white truncate">
+                              {item.subCategoryBrand}
+                            </h3>
                             <p className="text-[10px] text-emerald-400">{item.shopName}</p>
-                            <p className="text-[10px] text-slate-400">{item.variants.length} packaging variants listed</p>
+                            <p className="text-[10px] text-slate-400">
+                              {item.variants.length} packaging variants listed
+                            </p>
                           </div>
                         </div>
                         <div className="flex gap-2 pt-1 border-t border-slate-800/80">
                           <button
                             onClick={() => {
                               setProducts([...products, { ...item, status: 'approved' }]);
-                              setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id));
+                              setPendingSubCategories(
+                                pendingSubCategories.filter((i) => i.id !== item.id)
+                              );
                             }}
                             className="flex-1 bg-emerald-500 text-slate-950 font-bold py-1.5 rounded-lg text-xs"
                           >
                             ✓ Approve
                           </button>
                           <button
-                            onClick={() => setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id))}
+                            onClick={() =>
+                              setPendingSubCategories(
+                                pendingSubCategories.filter((i) => i.id !== item.id)
+                              )
+                            }
                             className="flex-1 bg-rose-900/60 border border-rose-700 text-rose-300 font-bold py-1.5 rounded-lg text-xs"
                           >
                             ✕ Reject
@@ -2299,19 +2600,22 @@ const handlePlaceCategoryOrder = async (catId) => {
             </div>
           )}
 
-          {/* TAB 2: TEMPORARY TESTING MODULE */}
+          {/* TAB 2: TEMPORARY TESTING BENCH SIMULATOR */}
           {founderTab === 'testing' && (
             <div className="bg-slate-900/80 border border-emerald-500/40 rounded-3xl p-6 space-y-6">
               <div>
-                <h2 className="text-base font-extrabold text-emerald-400">🧪 Developer & Founder Sandbox Simulator</h2>
+                <h2 className="text-base font-extrabold text-emerald-400">
+                  🧪 Developer & Founder Sandbox Simulator
+                </h2>
                 <p className="text-xs text-slate-300">
                   Quickly switch between user personas, test live orders, and inspect mobile screens side-by-side during active development.
                 </p>
               </div>
 
-              {/* 1-Click Role Jump Test */}
               <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 space-y-3">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Simulate Device Login As:</h3>
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Simulate Device Login As:
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { role: 'customer', name: 'Khoday Anvesh', label: '🛍️ Customer View' },
@@ -2322,14 +2626,26 @@ const handlePlaceCategoryOrder = async (catId) => {
                     <button
                       key={sim.role}
                       onClick={() => {
-                        const mockUser = { id: `mock_${sim.role}`, fullName: sim.name, username: sim.role, role: sim.role, phone: '9848011223' };
+                        const mockUser = {
+                          id: `mock_${sim.role}`,
+                          fullName: sim.name,
+                          username: sim.role,
+                          role: sim.role,
+                          phone: '9848011223'
+                        };
                         setCurrentUser(mockUser);
                         setSelectedRole(sim.role);
-                        setActivePortal(sim.role === 'customer' ? 'customer' : sim.role === 'service_provider' ? 'merchant' : sim.role === 'delivery_agent' ? 'rider' : 'merchant');
+                        setActivePortal(
+                          sim.role === 'customer'
+                            ? 'customer'
+                            : sim.role === 'delivery_agent'
+                            ? 'rider'
+                            : 'merchant'
+                        );
                         setOnboardingStep('app');
                         setViewMode('mobile_app');
                       }}
-                      className="p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl text-left transition"
+                      className="p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl text-left transition cursor-pointer"
                     >
                       <p className="text-xs font-extrabold text-emerald-300">{sim.label}</p>
                       <p className="text-[10px] text-slate-400">{sim.name}</p>
@@ -2338,28 +2654,30 @@ const handlePlaceCategoryOrder = async (catId) => {
                 </div>
               </div>
 
-              {/* Concurrent Order Simulator */}
               <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4">
                 <div>
                   <h3 className="text-xs font-bold text-white">Generate Live Simulated Town Order</h3>
-                  <p className="text-[11px] text-slate-400">Pushes a new customer order into the merchant queue and triggers rider dispatch</p>
+                  <p className="text-[11px] text-slate-400">
+                    Pushes a new customer order into the merchant queue and triggers rider dispatch
+                  </p>
                 </div>
                 <button
                   onClick={() => {
                     handleCreateConcurrentNewOrder();
                     setTestSimulatedOrderCount((c) => c + 1);
                   }}
-                  className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md"
+                  className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer"
                 >
                   ⚡ Push Test Order (+{testSimulatedOrderCount} generated)
                 </button>
               </div>
 
-              {/* Side-by-Side 3 Phone Simulator */}
               <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 flex justify-between items-center">
                 <div>
                   <h3 className="text-xs font-bold text-white">Triple Screen View</h3>
-                  <p className="text-[11px] text-slate-400">Renders Customer, Merchant, and Rider screens side-by-side on this monitor</p>
+                  <p className="text-[11px] text-slate-400">
+                    Renders Customer, Merchant, and Rider screens side-by-side on this monitor
+                  </p>
                 </div>
                 <button
                   onClick={() => {
@@ -2367,7 +2685,7 @@ const handlePlaceCategoryOrder = async (catId) => {
                     setActivePortal('split');
                     setViewMode('mobile_app');
                   }}
-                  className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs"
+                  className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs cursor-pointer"
                 >
                   Open 3 Phones Side-by-Side ➔
                 </button>
@@ -2380,8 +2698,12 @@ const handlePlaceCategoryOrder = async (catId) => {
             <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-sm font-bold text-emerald-400">Registered Citizen & Business Records</h2>
-                  <p className="text-xs text-slate-400">Enforces single account verification and phone OTP record tracking</p>
+                  <h2 className="text-sm font-bold text-emerald-400">
+                    Registered Citizen & Business Records
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Enforces single account verification and phone OTP record tracking
+                  </p>
                 </div>
                 <span className="text-xs bg-emerald-500/20 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/30">
                   {registeredUsers.length} Verified Users
@@ -2423,12 +2745,16 @@ const handlePlaceCategoryOrder = async (catId) => {
             </div>
           )}
 
-          {/* TAB 4: ESCROW LEDGER & COMMISSIONS */}
+          {/* TAB 4: ESCROW & COMMISSION SLIDERS */}
           {founderTab === 'escrow' && (
             <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-5">
               <div>
-                <h2 className="text-sm font-bold text-emerald-400">Town Commission Governance & Escrow Controls</h2>
-                <p className="text-xs text-slate-400">Control platform fees and inspect the 35% / 85% dynamic event advance escrow</p>
+                <h2 className="text-sm font-bold text-emerald-400">
+                  Town Commission Governance & Escrow Controls
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Control platform fees and inspect the 35% / 85% dynamic event advance escrow
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2446,7 +2772,9 @@ const handlePlaceCategoryOrder = async (catId) => {
                     onChange={(e) => setMerchantCommissionPct(Number(e.target.value))}
                     className="w-full accent-emerald-400"
                   />
-                  <p className="text-[10px] text-slate-400">Capped at 10% maximum under VocalForLocal local governance charter.</p>
+                  <p className="text-[10px] text-slate-400">
+                    Capped at 10% maximum under VocalForLocal local governance charter.
+                  </p>
                 </div>
 
                 <div className="bg-[#061014] border border-slate-800 rounded-2xl p-4 space-y-2">
@@ -2463,7 +2791,9 @@ const handlePlaceCategoryOrder = async (catId) => {
                     onChange={(e) => setConsumerFeePct(Number(e.target.value))}
                     className="w-full accent-emerald-400"
                   />
-                  <p className="text-[10px] text-slate-400">Protects consumer peace of mind with 0% to 5% flat scaling.</p>
+                  <p className="text-[10px] text-slate-400">
+                    Protects consumer peace of mind with 0% to 5% flat scaling.
+                  </p>
                 </div>
               </div>
             </div>
@@ -2472,99 +2802,69 @@ const handlePlaceCategoryOrder = async (catId) => {
       </div>
     </div>
   );
-  const renderAdminPortal = () => (
-    <MobilePhoneShell title="💻 VocalForLocal Admin" badge="Master Governance">
-      <div className="bg-slate-900 p-3 rounded-2xl border border-emerald-500/40 text-[11px] space-y-2">
-        <h3 className="font-bold text-emerald-400">
-          🛡️ Pending Merchants ({pendingMerchants.length})
-        </h3>
-        {pendingMerchants.map((pm) => (
-          <div key={pm.id} className="bg-[#061014] p-2 rounded-xl flex justify-between items-center">
-            <div>
-              <p className="font-bold">{pm.businessName}</p>
-              <p className="text-[9px] text-slate-400">E-Signed • {pm.categoryId}</p>
-            </div>
+
+  // ==========================================================================
+  // [SECTION-11] MAIN RENDER ROUTER, TOP CONTROL BAR & GOOGLE MAPS MODAL
+  // ==========================================================================
+  /**
+   * Production Tip:
+   * When you are ready to hide the top `VOCALFORLOCAL CONTROL SUITE` bar from
+   * public customers and keep it accessible ONLY via `https://your-site.vercel.app/?admin=true`,
+   * wrap the `<nav>...</nav>` block below inside `{isDirectAdminUrl && ( ... )}`.
+   */
+  return (
+    <div className="min-h-screen bg-[#03080b] text-white flex flex-col">
+      {/* 🛠️ TOP FOUNDER ACCESS BAR (Visible for 1-Click Testing) */}
+      <nav className="w-full bg-slate-900 border-b border-emerald-500/40 px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-50 shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-black tracking-wide text-emerald-300">
+            VOCALFORLOCAL CONTROL SUITE
+          </span>
+          <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 hidden sm:inline">
+            Active: {viewMode === 'founder_web' || isDirectAdminUrl ? '💻 Full Founder Desk' : '📱 Native Mobile App'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {viewMode === 'mobile_app' && !isDirectAdminUrl ? (
             <button
-              onClick={() => setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id))}
-              className="bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-bold"
+              type="button"
+              onClick={() => {
+                setFounderTab('testing');
+                setViewMode('founder_web');
+              }}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-3.5 py-1.5 rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
             >
-              Approve
+              <span>💻 Open Founder Admin & Testing Desk</span>
+              <span className="text-[10px] bg-slate-950/25 text-slate-900 px-1.5 rounded font-mono font-bold">
+                LIVE
+              </span>
             </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-[11px] space-y-2">
-        <h3 className="font-bold text-emerald-400">
-          📦 Pending Brand Sub-Categories ({pendingSubCategories.length})
-        </h3>
-        {pendingSubCategories.map((item) => (
-          <div key={item.id} className="bg-[#061014] p-2.5 rounded-xl space-y-1.5">
-            <p className="font-bold">{item.subCategoryBrand}</p>
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => {
-                  setProducts([...products, { ...item, status: 'approved' }]);
-                  setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id));
-                }}
-                className="flex-1 bg-emerald-400 text-slate-950 py-1 rounded-lg font-bold text-[10px]"
-              >
-                ✓ Approve
-              </button>
-              <button
-                onClick={() =>
-                  setPendingSubCategories(pendingSubCategories.filter((i) => i.id !== item.id))
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.location.search.includes('admin')) {
+                  window.history.replaceState({}, document.title, window.location.pathname);
                 }
-                className="flex-1 bg-rose-600 text-white py-1 rounded-lg font-bold text-[10px]"
-              >
-                ✕ Reject
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-[11px] space-y-2">
-        <div className="flex justify-between">
-          <span>Merchant Commission (0-10%):</span>
-          <span className="text-emerald-400 font-bold">{merchantCommissionPct}%</span>
+                setViewMode('mobile_app');
+              }}
+              className="bg-teal-400 hover:bg-teal-300 text-slate-950 font-black px-3.5 py-1.5 rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>📱 Back to Clean Mobile App</span>
+            </button>
+          )}
         </div>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          step="0.5"
-          value={merchantCommissionPct}
-          onChange={(e) => setMerchantCommissionPct(e.target.value)}
-          className="w-full accent-emerald-400"
-        />
-        <div className="flex justify-between">
-          <span>Consumer Fee (0-5%):</span>
-          <span className="text-emerald-400 font-bold">{consumerFeePct}%</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="5"
-          step="0.5"
-          value={consumerFeePct}
-          onChange={(e) => setConsumerFeePct(e.target.value)}
-          className="w-full accent-emerald-400"
-        />
-      </div>
-    </MobilePhoneShell>
-  );
+      </nav>
 
- return (
-    <>
-      {/* If viewMode is 'founder_web', render the full-screen Founder Management Web Dashboard */}
-      {viewMode === 'founder_web' ? (
-        renderFounderWebDashboard()
+      {/* VIEW ROUTER: Renders either Desktop Founder Suite OR Mobile Phone Bezel */}
+      {viewMode === 'founder_web' || isDirectAdminUrl ? (
+        <div className="flex-1 w-full">
+          {renderFounderWebDashboard()}
+        </div>
       ) : (
-        /* Otherwise, render strictly the clean customer/partner mobile phone application */
-        <div className="min-h-screen text-white p-3 font-sans flex flex-col justify-center items-center relative">
-          
-          {/* Main App Screens */}
+        <main className="flex-1 p-4 flex flex-col justify-center items-center">
           {onboardingStep === 'permissions' && renderPermissionsScreen()}
           {onboardingStep === 'auth' && renderAuthScreen()}
           {onboardingStep === 'app' && (
@@ -2582,26 +2882,17 @@ const handlePlaceCategoryOrder = async (catId) => {
               )}
             </>
           )}
-
-          {/* Discreet Floating Founder Console Button (Visible during development testing) */}
-          <div className="fixed bottom-3 right-3 z-50">
-            <button
-              onClick={() => setViewMode('founder_web')}
-              className="bg-slate-900/90 hover:bg-slate-800 text-emerald-400 border border-emerald-500/50 shadow-xl px-3 py-2 rounded-2xl text-[11px] font-extrabold flex items-center gap-1.5 backdrop-blur transition"
-            >
-              <span>⚡ Founder Web Desk & Testing Module</span>
-            </button>
-          </div>
-        </div>
+        </main>
       )}
 
-      {/* Google Maps Pinpoint Modal */}
+      {/* GOOGLE MAPS GPS PINPOINT MODAL */}
       {mapModal.open && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-emerald-500 rounded-3xl max-w-sm w-full p-4 space-y-3 text-xs">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-emerald-400">🗺️ VocalForLocal Live GPS Pin</h3>
               <button
+                type="button"
                 onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
                 className="bg-slate-800 px-2.5 py-1 rounded-lg text-[10px]"
               >
@@ -2622,6 +2913,7 @@ const handlePlaceCategoryOrder = async (catId) => {
               />
             </div>
             <button
+              type="button"
               onClick={() => setMapModal({ ...mapModal, open: false })}
               className="w-full bg-emerald-400 text-slate-950 font-black py-2.5 rounded-2xl"
             >
@@ -2630,6 +2922,6 @@ const handlePlaceCategoryOrder = async (catId) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
