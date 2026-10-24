@@ -43,10 +43,12 @@ import {
   REJECTION_REASONS
 } from './data';
 
+// ============================================================================
+// NATIVE SMARTPHONE BEZEL WRAPPER
+// ============================================================================
 function MobilePhoneShell({ title, badge, children }) {
   return (
     <div className="w-full max-w-[405px] mx-auto bg-[#071318] border-[7px] border-slate-800/90 rounded-[44px] shadow-[0_25px_70px_-15px_rgba(16,185,129,0.28)] overflow-hidden flex flex-col min-h-[800px] max-h-[850px] relative">
-      {/* Top Smartphone Notch & Status Bar */}
       <div className="bg-[#040B0E] px-5 py-2.5 flex justify-between items-center text-[10px] text-slate-300 border-b border-emerald-950/80 select-none">
         <span className="font-extrabold text-emerald-400 tracking-wide flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -55,13 +57,9 @@ function MobilePhoneShell({ title, badge, children }) {
         <div className="w-16 h-3.5 bg-slate-900 rounded-full border border-slate-800" />
         <span className="text-teal-300 font-semibold">{badge}</span>
       </div>
-
-      {/* Main Scrollable App Viewport */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 bg-gradient-to-b from-[#071318] via-[#09181F] to-[#050E12]">
         {children}
       </div>
-
-      {/* Bottom Gesture Home Bar */}
       <div className="bg-[#040B0E] py-2.5 flex justify-center border-t border-emerald-950/60">
         <div className="w-28 h-1 bg-slate-700 rounded-full" />
       </div>
@@ -70,9 +68,13 @@ function MobilePhoneShell({ title, badge, children }) {
 }
 
 // ============================================================================
-// [SECTION-02] APPLICATION STATE VARIABLES
+// MAIN APPLICATION & GLOBAL STATE
 // ============================================================================
-export default function App() {
+function AppContent() {
+  
+  // ============================================================================
+  // [SECTION-02] APPLICATION STATE VARIABLES
+  // ============================================================================
   const isDirectAdminUrl =
     typeof window !== 'undefined' && window.location.search.includes('admin');
 
@@ -237,7 +239,8 @@ export default function App() {
       { label: '1 kg', price: 85, mrp: 100, weightGrams: 1000 }
     ]
   });
-  // --- MERCHANT & DECORATOR LOCAL STATE (Moved to top to prevent React crashes) ---
+
+  // --- MERCHANT & DECORATOR LOCAL STATE ---
   const [merchantTab, setMerchantTab] = useState('orders'); // 'orders' | 'stock' | 'bids'
   const [stockItems, setStockItems] = useState([
     { id: 'st_1', name: 'Swastick Turmeric Powder', category: 'daily_needs', price: 50, unit: '250gms', inStock: true },
@@ -871,7 +874,6 @@ export default function App() {
       </MobilePhoneShell>
     );
   };
-
   // ==========================================================================
   // [SECTION-08] PORTAL 2 — MERCHANT & DECORATOR PARTNER APP UI
   // ==========================================================================
@@ -1011,72 +1013,68 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: STOCK & PRODUCT INVENTORY MANUAL */}
+        {/* TAB 2: ADVANCED STOCK & INVENTORY MANUAL */}
         {merchantTab === 'stock' && (
-          <div className="space-y-3">
+          <div className="space-y-4 text-white">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold text-slate-800 dark:text-white">Stock & Inventory Manual</h3>
-              <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
-                Live Sync
-              </span>
+              <div>
+                <h3 className="text-xs font-bold text-emerald-400">📋 Advanced Stock Management</h3>
+                <p className="text-[9px] text-slate-400 mt-0.5">Edit prices, delete items, or hide out-of-stock products globally.</p>
+              </div>
             </div>
 
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-              Toggle items out of stock to instantly hide them from consumers across Adilabad.
-            </p>
-
-            <div className="space-y-2">
+            <div className="space-y-3">
               {stockItems.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                      ₹{item.price} / {item.unit}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
+                <div key={item.id} className="bg-slate-900 border border-slate-700 p-3 rounded-xl flex flex-col gap-2 shadow-sm">
+                  {/* Item Name & Delete Button */}
+                  <div className="flex justify-between items-start border-b border-slate-800 pb-2">
+                    <span className="font-extrabold text-xs">{item.name}</span>
+                    <button 
                       onClick={() => {
-                        const updated = [...stockItems];
-                        updated[idx].inStock = !updated[idx].inStock;
-                        setStockItems(updated);
+                        if(window.confirm('Delete this product from your shop?')) {
+                          setStockItems(stockItems.filter(i => i.id !== item.id));
+                        }
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${
-                        item.inStock
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-400'
-                          : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-400'
+                      className="bg-rose-950/50 text-rose-400 border border-rose-800 px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer hover:bg-rose-900"
+                    >
+                      🗑️ Remove
+                    </button>
+                  </div>
+
+                  {/* Price Editor & Stock Toggle */}
+                  <div className="flex justify-between items-center gap-3 pt-1">
+                    {/* Inline Price Editor */}
+                    <div className="flex-1 flex items-center bg-[#03080b] border border-slate-700 rounded-lg px-2 py-1">
+                      <span className="text-slate-400 text-[10px] pr-1">₹</span>
+                      <input 
+                        type="number" 
+                        value={item.price} 
+                        onChange={(e) => {
+                          const updated = [...stockItems];
+                          updated[idx].price = Number(e.target.value);
+                          setStockItems(updated);
+                        }}
+                        className="w-full bg-transparent text-emerald-300 font-bold text-xs outline-none"
+                      />
+                      <span className="text-slate-500 text-[9px] pl-1 border-l border-slate-700 ml-1">/ {item.unit}</span>
+                    </div>
+
+                    {/* In-Stock Toggle */}
+                    <button 
+                      onClick={() => { 
+                        const updated = [...stockItems]; 
+                        updated[idx].inStock = !updated[idx].inStock; 
+                        setStockItems(updated); 
+                      }} 
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black cursor-pointer transition ${
+                        item.inStock 
+                          ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+                          : 'bg-slate-800 text-slate-400 border border-slate-600'
                       }`}
                     >
                       {item.inStock ? '✓ In Stock' : '✕ Out of Stock'}
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Service Provider Toggles */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-2">
-              <h4 className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                🎉 Service Provider Availability Toggles
-              </h4>
-              {Object.entries(serviceAvailability).map(([key, val]) => (
-                <div key={key} className="flex justify-between items-center text-xs">
-                  <span className="capitalize text-slate-700 dark:text-slate-300">
-                    {key.replace(/([A-Z])/g, ' $1')}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setServiceAvailability({ ...serviceAvailability, [key]: !val })
-                    }
-                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${
-                      val ? 'bg-emerald-500 text-slate-950' : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white'
-                    }`}
-                  >
-                    {val ? 'ON (Available)' : 'OFF (Paused)'}
-                  </button>
                 </div>
               ))}
             </div>
@@ -1200,24 +1198,21 @@ export default function App() {
   // ==========================================================================
   const renderFounderWebDashboard = () => (
     <div className="min-h-screen bg-[#040c10] text-slate-100 flex flex-col font-sans">
-      <header className="bg-slate-900/90 border-b border-emerald-950 px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 backdrop-blur">
+      {/* Header */}
+      <header className="bg-slate-900 border-b border-emerald-950 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xl shadow-lg">🌿</div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-xl">🌿</div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold text-white">VocalForLocal Founder Control Suite</h1>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">Adilabad Master Admin</span>
-            </div>
-            <p className="text-xs text-slate-400">Background KYC, Sub-Category Moderation & Automated Screen Flow Tester</p>
+            <h1 className="text-base font-extrabold text-white">Founder Control Suite</h1>
+            <p className="text-xs text-slate-400">Master Admin Dashboard</p>
           </div>
         </div>
-        <button onClick={() => { if (window.location.search.includes('admin')) { window.history.replaceState({}, document.title, window.location.pathname); } setViewMode('mobile_app'); }} className="bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs cursor-pointer shadow">
-          📱 Return to Clean Mobile App View
-        </button>
+        <button onClick={() => setViewMode('mobile_app')} className="bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs cursor-pointer shadow">📱 Return to Mobile App</button>
       </header>
 
+      {/* Sidebar & Main Content */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-       <aside className="space-y-2">
+        <aside className="space-y-2">
           {[
             { id: 'approvals', label: '🛡️ Approvals & KYC', count: pendingMerchants.length + pendingSubCategories.length },
             { id: 'testing', label: '🧪 Testing Sandbox Bench', count: splitScreens.length + ' Phones' },
@@ -1233,6 +1228,7 @@ export default function App() {
         </aside>
 
         <main className="lg:col-span-3 space-y-6">
+          {/* Approvals Tab */}
           {founderTab === 'approvals' && (
             <div className="space-y-6">
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
@@ -1250,25 +1246,7 @@ export default function App() {
             </div>
           )}
 
-          {founderTab === 'testing' && (
-            <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 space-y-6">
-              <h2 className="text-base font-extrabold text-emerald-400">🧪 Developer & Founder Sandbox Simulator</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { role: 'customer', name: 'Khoday Anvesh', label: '🛍️ Customer View' },
-                  { role: 'merchant', name: 'Sri Laxmi Supermart', label: '🏪 Merchant View' },
-                  { role: 'service_provider', name: 'Royal Decorators', label: '🎉 Decorator View' },
-                  { role: 'delivery_agent', name: 'Raju (Captain)', label: '🛵 Rider View' }
-                ].map((sim) => (
-                  <button key={sim.role} onClick={() => { setCurrentUser({ id: 'm', fullName: sim.name, role: sim.role }); setSelectedRole(sim.role); setActivePortal(sim.role === 'customer' ? 'customer' : sim.role === 'delivery_agent' ? 'rider' : 'merchant'); setOnboardingStep('app'); setViewMode('mobile_app'); }} className="p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-left transition cursor-pointer">
-                    <p className="text-xs font-extrabold text-emerald-300">{sim.label}</p>
-                    <p className="text-[10px] text-slate-400">{sim.name}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Testing Sandbox Tab */}
           {founderTab === 'testing' && (
             <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 space-y-6">
               <div className="flex justify-between items-center">
@@ -1280,13 +1258,12 @@ export default function App() {
                   Launch Multi-Phone View ➔
                 </button>
               </div>
-
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">Configure Phone Array:</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {splitScreens.map((phone, idx) => (
                     <div key={phone.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 relative">
-                      <button onClick={() => setSplitScreens(splitScreens.filter((_, i) => i !== idx))} className="absolute top-1 right-2 text-rose-500 font-bold hover:text-rose-400">✕</button>
+                      <button onClick={() => setSplitScreens(splitScreens.filter((_, i) => i !== idx))} className="absolute top-1 right-2 text-rose-500 font-bold hover:text-rose-400 cursor-pointer">✕</button>
                       <p className="text-[10px] text-slate-400">Screen {idx + 1}</p>
                       <p className="text-xs font-extrabold text-emerald-300 capitalize">{phone.role.replace('_', ' ')}</p>
                     </div>
@@ -1299,7 +1276,7 @@ export default function App() {
                     <option value="service_provider">Decorator</option>
                     <option value="delivery_agent">Rider</option>
                   </select>
-                  <button onClick={() => { const val = document.getElementById('addPhoneRole').value; setSplitScreens([...splitScreens, { id: `phone_${Date.now()}`, role: val }]); }} className="bg-teal-500 text-slate-950 font-bold px-3 rounded text-xs cursor-pointer">
+                  <button onClick={() => { const val = document.getElementById('addPhoneRole').value; setSplitScreens([...splitScreens, { id: `phone_${Date.now()}`, role: val }]); }} className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold px-3 rounded text-xs cursor-pointer">
                     + Add Phone
                   </button>
                 </div>
@@ -1307,40 +1284,61 @@ export default function App() {
             </div>
           )}
 
-          {founderTab === 'database' && (
-            <div className="bg-slate-900 border border-amber-500/40 rounded-3xl p-6 space-y-4 text-xs">
-              <h2 className="text-base font-extrabold text-amber-400">🗄️ Master Database Editor (Full Admin Control)</h2>
-              <p className="text-slate-300">Classify, view, edit images, and manipulate raw backend arrays globally.</p>
-
-              <div className="flex gap-2 border-b border-slate-800 pb-2">
-                <button onClick={() => setAdminDbTab('users')} className={`px-3 py-1.5 rounded-lg font-bold ${adminDbTab === 'users' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Consumer & Merchant Accounts</button>
-                <button onClick={() => setAdminDbTab('catalog')} className={`px-3 py-1.5 rounded-lg font-bold ${adminDbTab === 'catalog' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Stock, Categories & Images</button>
+          {/* ========================================================================== */}
+          {/* [SECTION-11] AUTOMATED SCREEN-BY-SCREEN FLOW TESTING SIMULATOR             */}
+          {/* ========================================================================== */}
+          {founderTab === 'flow_tester' && (
+            <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 space-y-4 text-xs">
+              <h2 className="text-base font-extrabold text-emerald-400">🔄 1-Click Screen-by-Screen Flow Tester</h2>
+              <p className="text-slate-300">Instantly jump to any operational screen in the mobile app without manual navigation:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button onClick={() => { setOnboardingStep('permissions'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">1. Permissions Gateway</p></button>
+                <button onClick={() => { setOnboardingStep('auth'); setAuthStage('landing'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">2. Auth & Page 1</p></button>
+                <button onClick={() => { setOnboardingStep('auth'); setAuthStage('signup_step2'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">3. ID & Selfie Verification</p></button>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('shop'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">4. Customer Store Hub</p></button>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('events'); setDecorStep('setup'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">5. Decor Bidding (Page A)</p></button>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('events'); setDecorStep('bidding'); setDecorBids([{ id: 'b1', maskedVendor: 'Decorator #1', price: 21500, features: 'Floral arch' }]); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">6. Reverse-Bidding (Page B)</p></button>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('merchant'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">7. Merchant Stock Manual</p></button>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('rider'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer"><p className="font-bold text-emerald-300">8. Delivery Captain Radar</p></button>
               </div>
+            </div>
+          )}
 
-              {/* Data Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+          {/* Master Database Editor */}
+          {founderTab === 'database' && (
+            <div className="bg-slate-900 border border-amber-500/40 rounded-3xl p-6 space-y-5 text-xs">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-base font-extrabold text-amber-400">🗄️ Master Database Editor</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Full root access to edit, suspend, or delete accounts and products.</p>
+                </div>
+                <span className="bg-rose-500/20 border border-rose-500/50 text-rose-300 font-extrabold px-3 py-1 rounded-full text-[10px] animate-pulse">⚠️ Live Data</span>
+              </div>
+              <div className="flex gap-2 border-b border-slate-800 pb-3">
+                <button onClick={() => setAdminDbTab('users')} className={`px-4 py-2 rounded-xl font-bold transition ${adminDbTab === 'users' ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}>👥 Users & Merchants</button>
+                <button onClick={() => setAdminDbTab('catalog')} className={`px-4 py-2 rounded-xl font-bold transition ${adminDbTab === 'catalog' ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}>📦 Products & Catalog</button>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="w-full text-left border-collapse bg-slate-950">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 uppercase text-[9px]">
-                      <th className="p-2">ID / Ref</th>
-                      <th className="p-2">Display Name / Title</th>
-                      <th className="p-2">Type / Category</th>
-                      <th className="p-2 text-right">Admin Action</th>
+                    <tr className="bg-slate-900 border-b border-slate-700 text-slate-300 uppercase text-[9px] tracking-wider">
+                      <th className="p-3">Data ID Ref</th>
+                      <th className="p-3">Display Name / Title</th>
+                      <th className="p-3">Role / Category</th>
+                      <th className="p-3 text-right">Admin Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/50">
-                    {(adminDbTab === 'users' ? registeredUsers : products).map((record, i) => (
-                      <tr key={record.id || i} className="hover:bg-slate-800/30">
-                        <td className="p-2 font-mono text-[10px] text-slate-500">{record.id || `prod_${i}`}</td>
-                        <td className="p-2 font-bold text-white">{record.fullName || record.subCategoryBrand || record.name}</td>
-                        <td className="p-2 text-emerald-400">{record.role || record.categoryId}</td>
-                        <td className="p-2 text-right">
-                          <button
-                            onClick={() => setEditingRecord({ type: adminDbTab, index: i, jsonStr: JSON.stringify(record, null, 2) })}
-                            className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-3 py-1 rounded text-[10px] font-bold cursor-pointer"
-                          >
-                            ✎ Edit JSON
-                          </button>
+                  <tbody className="divide-y divide-slate-800/80">
+                    {(adminDbTab === 'users' ? registeredUsers : products).map((r, i) => (
+                      <tr key={r.id || i} className="hover:bg-slate-800/40 transition">
+                        <td className="p-3 font-mono text-[10px] text-slate-500">{r.id || `prod_${i}`}</td>
+                        <td className="p-3 font-bold text-white">{r.fullName || r.subCategoryBrand}</td>
+                        <td className="p-3 font-mono text-[10px] text-emerald-400">{r.role || r.categoryId}</td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingRecord({ type: adminDbTab, index: i, jsonStr: JSON.stringify(r, null, 2) })} className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/50 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition">✎ Edit</button>
+                            <button onClick={() => { if(window.confirm(`Are you sure you want to PERMANENTLY DELETE ${r.fullName || r.subCategoryBrand}?`)) { if (adminDbTab === 'users') { setRegisteredUsers(registeredUsers.filter(user => user.id !== r.id)); } else { setProducts(products.filter(prod => prod.id !== r.id)); } } }} className="bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-700 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition">🗑️ Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1350,64 +1348,7 @@ export default function App() {
             </div>
           )}
 
-          {/* ========================================================== */}
-          {/* [SECTION-11] AUTOMATED SCREEN-BY-SCREEN FLOW TESTER MODULE   */}
-          {/* ========================================================== */}
-          {founderTab === 'flow_tester' && (
-            <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 space-y-4 text-xs">
-              <h2 className="text-base font-extrabold text-emerald-400">🔄 1-Click Screen-by-Screen Flow Tester</h2>
-              <p className="text-slate-300">
-                Instantly jump to any operational screen in the mobile app without manual navigation or authentication limits to verify clarity:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button onClick={() => { setOnboardingStep('permissions'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">1. Permissions Gateway</p>
-                  <p className="text-[10px] text-slate-400">View GPS & Privacy prompt</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('auth'); setAuthStage('landing'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">2. Auth & Page 1 (Wireframe)</p>
-                  <p className="text-[10px] text-slate-400">Oval logo & role dropdown</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('auth'); setAuthStage('signup_step2'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">3. ID & Selfie Verification</p>
-                  <p className="text-[10px] text-slate-400">Gov ID & photo capture</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('shop'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">4. Customer Store Hub</p>
-                  <p className="text-[10px] text-slate-400">Browse categories & products</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('events'); setDecorStep('setup'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">5. Decor Bidding Suite (Page A)</p>
-                  <p className="text-[10px] text-slate-400">Event date, venue & packages</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('app'); setActivePortal('customer'); setActiveCustomerSection('events'); setDecorStep('bidding'); setDecorBids([{ id: 'b1', maskedVendor: 'Decorator #1', price: 21500, features: 'Floral arch' }]); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">6. Reverse-Bidding (Page B)</p>
-                  <p className="text-[10px] text-slate-400">Accept quote / request more bids</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('app'); setActivePortal('merchant'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">7. Merchant Stock Manual</p>
-                  <p className="text-[10px] text-slate-400">Out-of-stock item toggles</p>
-                </button>
-                <button onClick={() => { setOnboardingStep('app'); setActivePortal('rider'); setViewMode('mobile_app'); }} className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-400 text-left cursor-pointer">
-                  <p className="font-bold text-emerald-300">8. Delivery Captain Radar</p>
-                  <p className="text-[10px] text-slate-400">Doorstep OTP verification</p>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {founderTab === 'users' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 text-xs">
-              <h2 className="text-sm font-bold text-emerald-400">Registered Citizens ({registeredUsers.length})</h2>
-              {registeredUsers.map((u) => (
-                <div key={u.id} className="bg-slate-950 p-3 rounded-xl flex justify-between items-center border border-slate-800">
-                  <span>{u.fullName} (@{u.username})</span>
-                  <span className="text-emerald-400 font-mono">{u.phone}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
+          {/* Escrow & Commissions Tab */}
           {founderTab === 'escrow' && (
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 text-xs">
               <h2 className="text-sm font-bold text-emerald-400">Town Commission Governance</h2>
@@ -1433,25 +1374,17 @@ export default function App() {
   // ==========================================================================
   return (
     <div className="min-h-screen bg-[#03080b] text-white flex flex-col">
-      {/* Top Founder Testing Control Bar */}
-      <nav className="w-full bg-slate-900 border-b border-emerald-500/40 px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-50 shadow-lg text-xs">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-black tracking-wide text-emerald-300">VOCALFORLOCAL CONTROL SUITE</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {viewMode === 'mobile_app' && !isDirectAdminUrl ? (
-            <button type="button" onClick={() => { setFounderTab('flow_tester'); setViewMode('founder_web'); }} className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow cursor-pointer">
-              💻 Open Founder Web Desk & Screen Flow Tester
-            </button>
-          ) : (
-            <button type="button" onClick={() => setViewMode('mobile_app')} className="bg-teal-400 hover:bg-teal-300 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow cursor-pointer">
-              📱 Return to Mobile Frame
-            </button>
-          )}
-        </div>
+      {/* Top Control Bar */}
+      <nav className="w-full bg-slate-900 border-b border-emerald-500/40 px-4 py-2.5 flex justify-between items-center sticky top-0 z-50 shadow-lg text-xs">
+        <span className="font-black text-emerald-300">VOCALFORLOCAL CONTROL SUITE</span>
+        {viewMode === 'mobile_app' && !isDirectAdminUrl ? (
+          <button onClick={() => { setFounderTab('testing'); setViewMode('founder_web'); }} className="bg-emerald-500 text-slate-950 font-black px-3.5 py-1.5 rounded-xl cursor-pointer">💻 Founder Desk</button>
+        ) : (
+          <button onClick={() => setViewMode('mobile_app')} className="bg-teal-400 text-slate-950 font-black px-3.5 py-1.5 rounded-xl cursor-pointer">📱 Back to App</button>
+        )}
       </nav>
 
+      {/* Router Logic */}
       {viewMode === 'founder_web' || isDirectAdminUrl ? (
         <div className="flex-1 w-full">{renderFounderWebDashboard()}</div>
       ) : (
@@ -1464,15 +1397,14 @@ export default function App() {
               {activePortal === 'merchant' && renderMerchantPortal()}
               {activePortal === 'rider' && renderRiderPortal()}
               
-              {/* ---> NEW: MULTI-PHONE SPLIT SCREEN ROUTER <--- */}
+              {/* Multi-Phone Split Screen Router */}
               {activePortal === 'split' && (
                 <div className="w-full flex overflow-x-auto gap-6 pb-6 px-4 snap-x snap-mandatory hide-scroll">
                   {splitScreens.map((phone, idx) => (
                     <div key={phone.id} className="min-w-[405px] flex-shrink-0 snap-center relative">
                       <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 px-3 py-0.5 rounded-full text-[10px] font-black z-50 whitespace-nowrap">
-                        PHONE {idx + 1}: {phone.role.toUpperCase().replace('_', ' ')}
+                        PHONE {idx + 1}: {phone.role.toUpperCase()}
                       </div>
-                      {/* Properly route roles so screens do not go blank */}
                       {phone.role === 'customer' && renderCustomerPortal()}
                       {(phone.role === 'merchant' || phone.role === 'service_provider') && renderMerchantPortal()}
                       {phone.role === 'delivery_agent' && renderRiderPortal()}
@@ -1498,48 +1430,105 @@ export default function App() {
         </div>
       )}
 
-      {/* ---> NEW: ADMIN MASTER JSON DATABASE EDITOR MODAL <--- */}
+      {/* JSON Database Editor Modal */}
       {editingRecord && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-amber-500 rounded-3xl w-full max-w-2xl p-5 space-y-4 flex flex-col max-h-[90vh]">
-            <h3 className="font-extrabold text-amber-400 text-sm">🗄️ Master Database Editor (Raw JSON)</h3>
-            <p className="text-[10px] text-slate-400">Careful: Invalid JSON will break the application state. Use this to update image URLs, prices, stock limits, or user roles.</p>
-            
-            <textarea
-              value={editingRecord.jsonStr}
-              onChange={(e) => setEditingRecord({ ...editingRecord, jsonStr: e.target.value })}
-              className="flex-1 w-full bg-[#03080b] text-emerald-300 font-mono text-[11px] p-3 rounded-xl border border-slate-700 outline-none overflow-y-auto"
+          <div className="bg-slate-900 border border-amber-500 rounded-3xl w-full max-w-2xl p-5 space-y-4 flex flex-col">
+            <h3 className="font-extrabold text-amber-400 text-sm">🗄️ Master Database Editor</h3>
+            <textarea 
+              value={editingRecord.jsonStr} 
+              onChange={(e) => setEditingRecord({ ...editingRecord, jsonStr: e.target.value })} 
+              className="h-64 bg-[#03080b] text-emerald-300 font-mono text-[11px] p-3 rounded-xl border border-slate-700 outline-none" 
             />
-            
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setEditingRecord(null)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-bold text-xs cursor-pointer">Cancel</button>
+            <div className="flex gap-3">
+              <button onClick={() => setEditingRecord(null)} className="flex-1 bg-slate-800 py-2.5 rounded-xl font-bold cursor-pointer">Cancel</button>
               <button 
                 onClick={() => {
                   try {
-                    const parsedData = JSON.parse(editingRecord.jsonStr);
-                    if (editingRecord.type === 'users') {
-                      const newArr = [...registeredUsers];
-                      newArr[editingRecord.index] = parsedData;
-                      setRegisteredUsers(newArr);
-                    } else {
-                      const newArr = [...products];
-                      newArr[editingRecord.index] = parsedData;
-                      setProducts(newArr);
+                    const data = JSON.parse(editingRecord.jsonStr);
+                    if (editingRecord.type === 'users') { 
+                      const a = [...registeredUsers]; 
+                      a[editingRecord.index] = data; 
+                      setRegisteredUsers(a); 
+                    } else { 
+                      const a = [...products]; 
+                      a[editingRecord.index] = data; 
+                      setProducts(a); 
                     }
-                    setEditingRecord(null);
-                    alert('✅ Database Record Updated Successfully.');
-                  } catch(e) {
-                    alert('❌ Invalid JSON syntax. Please check brackets and quotes.');
+                    setEditingRecord(null); 
+                    alert('✅ Saved');
+                  } catch(e) { 
+                    alert('❌ Invalid JSON'); 
                   }
                 }} 
-                className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl font-black text-xs cursor-pointer shadow"
+                className="flex-1 bg-amber-500 text-slate-950 py-2.5 rounded-xl font-black cursor-pointer"
               >
-                Overwrite Record to Database
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+} // <--- END OF AppContent FUNCTION
+
+// ============================================================================
+// GLOBAL ERROR BOUNDARY (CATCHES CRASHES & PREVENTS BLANK SCREENS)
+// ============================================================================
+class GlobalErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    console.error("VocalForLocal App Crashed:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#071318] flex flex-col items-center justify-center p-4 font-sans">
+          <div className="bg-slate-900 border-2 border-rose-500 rounded-3xl w-full max-w-2xl p-6 shadow-2xl shadow-rose-900/50">
+            <h2 className="text-xl font-black text-rose-400 mb-2">⚠️ Application Crashed!</h2>
+            <p className="text-xs text-slate-300 mb-4">Please check the code lines below to find your mistake:</p>
+            
+            <div className="bg-[#03080b] rounded-xl p-4 border border-rose-900/50 mb-3 overflow-x-auto">
+              <p className="text-[11px] font-bold text-rose-300 mb-1">Error Message:</p>
+              <p className="text-xs font-mono text-rose-100">{this.state.error?.toString()}</p>
+            </div>
+
+            <div className="bg-[#03080b] rounded-xl p-4 border border-slate-800 overflow-x-auto">
+              <p className="text-[11px] font-bold text-amber-400 mb-1">Stack Trace & Line Numbers:</p>
+              <pre className="text-[10px] text-slate-400 font-mono leading-relaxed whitespace-pre-wrap">
+                {this.state.errorInfo?.componentStack || this.state.error?.stack}
+              </pre>
+            </div>
+
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-5 w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-xl shadow-lg transition cursor-pointer"
+            >
+              🔄 Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ============================================================================
+// DEFAULT EXPORT (Wraps the application in the Error Catcher)
+// ============================================================================
+export default function App() {
+  return (
+    <GlobalErrorBoundary>
+      <AppContent />
+    </GlobalErrorBoundary>
   );
 }
