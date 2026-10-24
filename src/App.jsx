@@ -179,6 +179,18 @@ export default function App() {
   const [riderOtpInput, setRiderOtpInput] = useState('');
   const [reviewText, setReviewText] = useState('');
 
+  // --- ADMIN MASTER DATABASE & MULTI-PHONE SIMULATOR STATE ---
+  // Array of active simulated phones. Admin can add as many as needed.
+  const [splitScreens, setSplitScreens] = useState([
+    { id: 'phone_1', role: 'customer' },
+    { id: 'phone_2', role: 'merchant' },
+    { id: 'phone_3', role: 'service_provider' },
+    { id: 'phone_4', role: 'delivery_agent' }
+  ]);
+  const [adminDbTab, setAdminDbTab] = useState('users'); // 'users' | 'catalog' | 'merchants'
+  // Raw JSON Editor state for Admin full-control overrides
+  const [editingRecord, setEditingRecord] = useState(null);
+  
   // --- MULTI-PAGE EVENT DECORATION & REVERSE-BIDDING WORKFLOW STATE ---
   // decorStep: 'setup' (Page A) | 'bidding' (Page B - with Accept/Request More) | 'escrow_payment' (Page C - Confirmation & Escrow)
   const [decorStep, setDecorStep] = useState('setup');
@@ -1011,13 +1023,13 @@ export default function App() {
       </header>
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <aside className="space-y-2">
+       <aside className="space-y-2">
           {[
             { id: 'approvals', label: '🛡️ Approvals & KYC', count: pendingMerchants.length + pendingSubCategories.length },
-            { id: 'testing', label: '🧪 Testing Sandbox Bench', count: 'Live' },
-            { id: 'flow_tester', label: '🔄 Screen-by-Screen Flow Tester', count: 'New' },
-            { id: 'users', label: '👥 Registered Citizens DB', count: registeredUsers.length },
-            { id: 'escrow', label: '💰 Escrow & Commissions', count: `${merchantCommissionPct}% / ${consumerFeePct}%` }
+            { id: 'testing', label: '🧪 Testing Sandbox Bench', count: splitScreens.length + ' Phones' },
+            { id: 'flow_tester', label: '🔄 Screen Flow Tester', count: 'QA' },
+            { id: 'database', label: '🗄️ Master Database Editor', count: 'Full Control' },
+            { id: 'escrow', label: '💰 Escrow & Commissions', count: `${merchantCommissionPct}%` }
           ].map((tab) => (
             <button key={tab.id} onClick={() => setFounderTab(tab.id)} className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition border cursor-pointer ${founderTab === tab.id ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300 shadow-md' : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'}`}>
               <span>{tab.label}</span>
@@ -1059,6 +1071,87 @@ export default function App() {
                     <p className="text-[10px] text-slate-400">{sim.name}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {founderTab === 'testing' && (
+            <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-base font-extrabold text-emerald-400">📱 Multi-Phone Testing Array</h2>
+                  <p className="text-xs text-slate-300">Open 4, 5, or more phones side-by-side to watch the entire ecosystem sync live.</p>
+                </div>
+                <button onClick={() => { setOnboardingStep('app'); setActivePortal('split'); setViewMode('mobile_app'); }} className="bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs cursor-pointer shadow">
+                  Launch Multi-Phone View ➔
+                </button>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Configure Phone Array:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {splitScreens.map((phone, idx) => (
+                    <div key={phone.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 relative">
+                      <button onClick={() => setSplitScreens(splitScreens.filter((_, i) => i !== idx))} className="absolute top-1 right-2 text-rose-500 font-bold hover:text-rose-400">✕</button>
+                      <p className="text-[10px] text-slate-400">Screen {idx + 1}</p>
+                      <p className="text-xs font-extrabold text-emerald-300 capitalize">{phone.role.replace('_', ' ')}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-slate-800">
+                  <select id="addPhoneRole" className="bg-slate-900 text-xs border border-slate-700 text-white rounded p-1.5 outline-none">
+                    <option value="customer">Customer</option>
+                    <option value="merchant">Merchant</option>
+                    <option value="service_provider">Decorator</option>
+                    <option value="delivery_agent">Rider</option>
+                  </select>
+                  <button onClick={() => { const val = document.getElementById('addPhoneRole').value; setSplitScreens([...splitScreens, { id: `phone_${Date.now()}`, role: val }]); }} className="bg-teal-500 text-slate-950 font-bold px-3 rounded text-xs cursor-pointer">
+                    + Add Phone
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {founderTab === 'database' && (
+            <div className="bg-slate-900 border border-amber-500/40 rounded-3xl p-6 space-y-4 text-xs">
+              <h2 className="text-base font-extrabold text-amber-400">🗄️ Master Database Editor (Full Admin Control)</h2>
+              <p className="text-slate-300">Classify, view, edit images, and manipulate raw backend arrays globally.</p>
+
+              <div className="flex gap-2 border-b border-slate-800 pb-2">
+                <button onClick={() => setAdminDbTab('users')} className={`px-3 py-1.5 rounded-lg font-bold ${adminDbTab === 'users' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Consumer & Merchant Accounts</button>
+                <button onClick={() => setAdminDbTab('catalog')} className={`px-3 py-1.5 rounded-lg font-bold ${adminDbTab === 'catalog' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Stock, Categories & Images</button>
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 uppercase text-[9px]">
+                      <th className="p-2">ID / Ref</th>
+                      <th className="p-2">Display Name / Title</th>
+                      <th className="p-2">Type / Category</th>
+                      <th className="p-2 text-right">Admin Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {(adminDbTab === 'users' ? registeredUsers : products).map((record, i) => (
+                      <tr key={record.id || i} className="hover:bg-slate-800/30">
+                        <td className="p-2 font-mono text-[10px] text-slate-500">{record.id || `prod_${i}`}</td>
+                        <td className="p-2 font-bold text-white">{record.fullName || record.subCategoryBrand || record.name}</td>
+                        <td className="p-2 text-emerald-400">{record.role || record.categoryId}</td>
+                        <td className="p-2 text-right">
+                          <button
+                            onClick={() => setEditingRecord({ type: adminDbTab, index: i, jsonStr: JSON.stringify(record, null, 2) })}
+                            className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-3 py-1 rounded text-[10px] font-bold cursor-pointer"
+                          >
+                            ✎ Edit JSON
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1176,6 +1269,23 @@ export default function App() {
               {activePortal === 'customer' && renderCustomerPortal()}
               {activePortal === 'merchant' && renderMerchantPortal()}
               {activePortal === 'rider' && renderRiderPortal()}
+              
+              {/* ---> NEW: MULTI-PHONE SPLIT SCREEN ROUTER <--- */}
+              {activePortal === 'split' && (
+                <div className="w-full flex overflow-x-auto gap-6 pb-6 px-4 snap-x snap-mandatory hide-scroll">
+                  {splitScreens.map((phone, idx) => (
+                    <div key={phone.id} className="min-w-[405px] flex-shrink-0 snap-center relative">
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 px-3 py-0.5 rounded-full text-[10px] font-black z-50 whitespace-nowrap">
+                        PHONE {idx + 1}: {phone.role.toUpperCase().replace('_', ' ')}
+                      </div>
+                      {/* Properly route roles so screens do not go blank */}
+                      {phone.role === 'customer' && renderCustomerPortal()}
+                      {(phone.role === 'merchant' || phone.role === 'service_provider') && renderMerchantPortal()}
+                      {phone.role === 'delivery_agent' && renderRiderPortal()}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </main>
@@ -1190,6 +1300,49 @@ export default function App() {
             <button onClick={() => setMapModal({ ...mapModal, open: false })} className="w-full bg-emerald-400 text-slate-950 font-black py-2.5 rounded-2xl cursor-pointer">
               ✓ Confirm Location
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ---> NEW: ADMIN MASTER JSON DATABASE EDITOR MODAL <--- */}
+      {editingRecord && (
+        <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500 rounded-3xl w-full max-w-2xl p-5 space-y-4 flex flex-col max-h-[90vh]">
+            <h3 className="font-extrabold text-amber-400 text-sm">🗄️ Master Database Editor (Raw JSON)</h3>
+            <p className="text-[10px] text-slate-400">Careful: Invalid JSON will break the application state. Use this to update image URLs, prices, stock limits, or user roles.</p>
+            
+            <textarea
+              value={editingRecord.jsonStr}
+              onChange={(e) => setEditingRecord({ ...editingRecord, jsonStr: e.target.value })}
+              className="flex-1 w-full bg-[#03080b] text-emerald-300 font-mono text-[11px] p-3 rounded-xl border border-slate-700 outline-none overflow-y-auto"
+            />
+            
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setEditingRecord(null)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-bold text-xs cursor-pointer">Cancel</button>
+              <button 
+                onClick={() => {
+                  try {
+                    const parsedData = JSON.parse(editingRecord.jsonStr);
+                    if (editingRecord.type === 'users') {
+                      const newArr = [...registeredUsers];
+                      newArr[editingRecord.index] = parsedData;
+                      setRegisteredUsers(newArr);
+                    } else {
+                      const newArr = [...products];
+                      newArr[editingRecord.index] = parsedData;
+                      setProducts(newArr);
+                    }
+                    setEditingRecord(null);
+                    alert('✅ Database Record Updated Successfully.');
+                  } catch(e) {
+                    alert('❌ Invalid JSON syntax. Please check brackets and quotes.');
+                  }
+                }} 
+                className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl font-black text-xs cursor-pointer shadow"
+              >
+                Overwrite Record to Database
+              </button>
+            </div>
           </div>
         </div>
       )}
