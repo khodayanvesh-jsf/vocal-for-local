@@ -237,6 +237,18 @@ export default function App() {
       { label: '1 kg', price: 85, mrp: 100, weightGrams: 1000 }
     ]
   });
+  // --- MERCHANT & DECORATOR LOCAL STATE (Moved to top to prevent React crashes) ---
+  const [merchantTab, setMerchantTab] = useState('orders'); // 'orders' | 'stock' | 'bids'
+  const [stockItems, setStockItems] = useState([
+    { id: 'st_1', name: 'Swastick Turmeric Powder', category: 'daily_needs', price: 50, unit: '250gms', inStock: true },
+    { id: 'st_2', name: 'Swastick Turmeric Powder', category: 'daily_needs', price: 100, unit: '500gms', inStock: true },
+    { id: 'st_3', name: 'Amul Fresh Milk', category: 'daily_needs', price: 28, unit: '500ml', inStock: false }
+  ]);
+  const [serviceAvailability, setServiceAvailability] = useState({
+    marrageDecor: true, haldiStage: true, djLighting: false
+  });
+  const [myBidAmount, setMyBidAmount] = useState('');
+  const [myBidReason, setMyBidReason] = useState('');
 
   // ==========================================================================
   // [SECTION-03] SECURITY, OTP, ANTI-FRAUD ID, PASSWORD & BIOMETRIC FUNCTIONS
@@ -864,55 +876,133 @@ export default function App() {
   // [SECTION-08] PORTAL 2 — MERCHANT & DECORATOR PARTNER APP UI
   // ==========================================================================
   const renderMerchantPortal = () => {
-    const [merchantTab, setMerchantTab] = useState('orders');
-    const [stockItems, setStockItems] = useState([
-      { id: 'st_1', name: 'Swastick Turmeric Powder', price: 50, unit: '250gms', inStock: true },
-      { id: 'st_2', name: 'Swastick Turmeric Powder', price: 100, unit: '500gms', inStock: true },
-      { id: 'st_3', name: 'Amul Fresh Milk', price: 28, unit: '500ml', inStock: false }
-    ]);
-
     return (
       <MobilePhoneShell title="🏪 VocalForLocal Partner" badge="Merchant Desk">
-        <div className="flex justify-between items-center border-b border-slate-800 pb-2 text-white">
+        {/* Top Header & Personal Shopping Shortcut */}
+        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
           <div>
-            <h2 className="text-xs font-black text-emerald-400">{currentUser?.fullName || 'Sri Laxmi Supermart'}</h2>
-            <p className="text-[10px] text-slate-400 uppercase">Role: {currentUser?.role || 'merchant'}</p>
+            <h2 className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+              {currentUser?.fullName || 'Sri Laxmi Supermart'}
+            </h2>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">
+              Role: {(currentUser?.role || 'merchant').replace('_', ' ')}
+            </p>
           </div>
-          <button onClick={() => setActivePortal('customer')} className="bg-slate-800 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl text-[9px] font-bold cursor-pointer">
-            🛍️ Personal Shop
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setActivePortal('customer')}
+              className="bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 px-2.5 py-1 rounded-xl text-[9px] font-bold cursor-pointer"
+            >
+              🛍️ Personal Shop
+            </button>
+          </div>
+        </div>
+
+        {/* Merchant Portal Navigation Tabs */}
+        <div className="grid grid-cols-3 gap-1 text-[10px] bg-slate-200 dark:bg-slate-900 p-1 rounded-xl">
+          <button
+            onClick={() => setMerchantTab('orders')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'orders'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            📦 Orders
+          </button>
+          <button
+            onClick={() => setMerchantTab('stock')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'stock'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            📋 Stock / Services
+          </button>
+          <button
+            onClick={() => setMerchantTab('bids')}
+            className={`py-1.5 rounded-lg font-extrabold transition ${
+              merchantTab === 'bids'
+                ? 'bg-emerald-500 text-slate-950 shadow'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            🌸 Bidding Desk
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-1 text-[10px] bg-slate-900 p-1 rounded-xl text-white">
-          <button onClick={() => setMerchantTab('orders')} className={`py-1.5 rounded-lg font-extrabold ${merchantTab === 'orders' ? 'bg-emerald-500 text-slate-950' : 'text-slate-300'}`}>📦 Orders</button>
-          <button onClick={() => setMerchantTab('stock')} className={`py-1.5 rounded-lg font-extrabold ${merchantTab === 'stock' ? 'bg-emerald-500 text-slate-950' : 'text-slate-300'}`}>📋 Stock</button>
-          <button onClick={() => setMerchantTab('bids')} className={`py-1.5 rounded-lg font-extrabold ${merchantTab === 'bids' ? 'bg-emerald-500 text-slate-950' : 'text-slate-300'}`}>🌸 Bids</button>
-        </div>
-
+        {/* TAB 1: CURRENT ORDERS / APPOINTMENTS LIST */}
         {merchantTab === 'orders' && (
-          <div className="space-y-2.5 text-white">
+          <div className="space-y-2.5">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold">Active Customer Orders</h3>
-              <button onClick={handleCreateConcurrentNewOrder} className="bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-xl text-[9px] font-extrabold cursor-pointer">+ Simulate Order</button>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white">Active Customer Orders</h3>
+              <button
+                onClick={handleCreateConcurrentNewOrder}
+                className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-xl text-[9px] font-extrabold cursor-pointer"
+              >
+                + Simulate Incoming Order
+              </button>
             </div>
+
             {orders.length === 0 ? (
-              <p className="text-[11px] text-slate-400 text-center py-6">No active orders right now.</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center py-6">
+                No active orders right now. Standing by for customer checkout.
+              </p>
             ) : (
               orders.map((ord) => (
-                <div key={ord.id} className="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-[11px] space-y-2">
+                <div
+                  key={ord.id}
+                  className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-[11px] space-y-2 shadow-sm"
+                >
                   <div className="flex justify-between font-bold">
-                    <span className="text-emerald-400">{ord.id}</span>
-                    <span>₹{ord.grandTotal}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{ord.id}</span>
+                    <span className="text-slate-600 dark:text-slate-300">Total: ₹{ord.grandTotal}</span>
                   </div>
-                  <p className="text-[10px] text-slate-300">Customer: {ord.customerName} | {ord.address}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
+                    <strong>Customer:</strong> {ord.customerName} | <strong>Delivery:</strong> {ord.address}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {ord.items.map((i) => `${i.name} x${i.qty}`).join(', ')}
+                  </p>
+
                   {ord.status === 'ORDER_PLACED_MERCHANT_POPUP' && (
-                    <button onClick={() => handleMerchantConfirmBill(ord.id)} className="w-full bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer">
-                      ✓ Verify Stock & Send Final Bill
-                    </button>
+                    <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+                      <div className="grid grid-cols-2 gap-1.5 text-slate-800 dark:text-white">
+                        <div>
+                          <label className="text-[9px] text-slate-500">Heavy Transport (₹)</label>
+                          <input
+                            type="number"
+                            defaultValue={0}
+                            onChange={(e) => (ord.heavyTransportFee = Number(e.target.value))}
+                            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500">Labor Fee (₹)</label>
+                          <input
+                            type="number"
+                            defaultValue={0}
+                            onChange={(e) => (ord.laborFee = Number(e.target.value))}
+                            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleMerchantConfirmBill(ord.id, ord.heavyTransportFee, ord.laborFee)}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer"
+                      >
+                        ✓ Verify Stock & Send Final Bill to Customer
+                      </button>
+                    </div>
                   )}
+
                   {ord.status === 'PAYMENT_DONE_PACKING_STARTED' && (
-                    <button onClick={() => handleMerchantDispatchAlert(ord.id)} className="w-full bg-amber-400 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer">
-                      📦 Packed ➔ Alert Rider
+                    <button
+                      onClick={() => handleMerchantDispatchAlert(ord.id)}
+                      className="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-1.5 rounded-xl text-xs cursor-pointer"
+                    >
+                      📦 Packed & Ready ➔ Alert Rider
                     </button>
                   )}
                 </div>
@@ -921,16 +1011,71 @@ export default function App() {
           </div>
         )}
 
+        {/* TAB 2: STOCK & PRODUCT INVENTORY MANUAL */}
         {merchantTab === 'stock' && (
-          <div className="space-y-3 text-white">
-            <h3 className="text-xs font-bold text-emerald-400">📋 Stock Manual & Out-of-Stock Hiding</h3>
-            <p className="text-[10px] text-slate-400">Toggle items out of stock to instantly hide them from consumers.</p>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white">Stock & Inventory Manual</h3>
+              <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                Live Sync
+              </span>
+            </div>
+
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Toggle items out of stock to instantly hide them from consumers across Adilabad.
+            </p>
+
             <div className="space-y-2">
               {stockItems.map((item, idx) => (
-                <div key={item.id} className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs">
-                  <span>{item.name} ({item.unit})</span>
-                  <button onClick={() => { const u = [...stockItems]; u[idx].inStock = !u[idx].inStock; setStockItems(u); }} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${item.inStock ? 'bg-emerald-500 text-slate-950' : 'bg-rose-600 text-white'}`}>
-                    {item.inStock ? '✓ In Stock' : '✕ Out of Stock'}
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      ₹{item.price} / {item.unit}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const updated = [...stockItems];
+                        updated[idx].inStock = !updated[idx].inStock;
+                        setStockItems(updated);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${
+                        item.inStock
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-400'
+                          : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-400'
+                      }`}
+                    >
+                      {item.inStock ? '✓ In Stock' : '✕ Out of Stock'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Service Provider Toggles */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-2">
+              <h4 className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                🎉 Service Provider Availability Toggles
+              </h4>
+              {Object.entries(serviceAvailability).map(([key, val]) => (
+                <div key={key} className="flex justify-between items-center text-xs">
+                  <span className="capitalize text-slate-700 dark:text-slate-300">
+                    {key.replace(/([A-Z])/g, ' $1')}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setServiceAvailability({ ...serviceAvailability, [key]: !val })
+                    }
+                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${
+                      val ? 'bg-emerald-500 text-slate-950' : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white'
+                    }`}
+                  >
+                    {val ? 'ON (Available)' : 'OFF (Paused)'}
                   </button>
                 </div>
               ))}
@@ -938,15 +1083,64 @@ export default function App() {
           </div>
         )}
 
+        {/* TAB 3: ANONYMOUS DECORATION REVERSE-BIDDING DESK */}
         {merchantTab === 'bids' && (
-          <div className="space-y-3 text-white">
-            <h3 className="text-xs font-bold text-emerald-400">🌸 Live Event Reverse-Bidding Desk</h3>
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl space-y-2 text-xs">
-              <p className="font-bold">Royal Wedding Setup (Est: ₹25,000)</p>
-              <input type="number" placeholder="Enter Bid Amount in INR" value={merchantBidForm.price} onChange={(e) => setMerchantBidForm({ ...merchantBidForm, price: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white" />
-              <textarea rows={2} placeholder="Pricing justification & package details..." value={merchantBidForm.notes} onChange={(e) => setMerchantBidForm({ ...merchantBidForm, notes: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white" />
-              <button onClick={() => alert('✅ Competitive quote broadcasted anonymously!')} className="w-full bg-emerald-400 text-slate-950 font-black py-2 rounded-xl cursor-pointer">
-                Submit Competing Bid ➔
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-white">🌸 Live Event Reverse-Bidding Desk</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Submit competitive Indian Rupee bids and pricing justifications. Identities remain masked until the 35% advance escrow is paid.
+            </p>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-2.5">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-slate-700 dark:text-slate-300">Active Request: Royal Wedding Setup</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Est Budget: ₹25,000</span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-0.5">BID AMOUNT (INDR. CURRENCY - NUMERIC ONLY)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 21500"
+                  value={myBidAmount}
+                  onChange={(e) => setMyBidAmount(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-0.5">PRICING RATIONALE / INCLUSIONS</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Includes welcome flower arch and 4 LED warm spotlights..."
+                  value={myBidReason}
+                  onChange={(e) => setMyBidReason(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-white"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!myBidAmount || isNaN(myBidAmount)) {
+                    alert('Please enter a valid numeric value for your bid.');
+                    return;
+                  }
+                  setDecorBids([
+                    ...decorBids,
+                    {
+                      id: `bid_${Date.now()}`,
+                      maskedVendor: 'Verified Partner (You)',
+                      price: Number(myBidAmount),
+                      features: myBidReason || 'Standard package inclusions'
+                    }
+                  ]);
+                  setBiddingStatus('BROADCASTED');
+                  alert('✅ Competitive bid broadcasted anonymously to consumer!');
+                }}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2 rounded-xl text-xs shadow cursor-pointer"
+              >
+                Submit Anonymous Bid ➔
               </button>
             </div>
           </div>
