@@ -573,17 +573,33 @@ function AppContent() {
 
         {authError && <div className="bg-rose-950 border border-rose-500 rounded-xl p-2 mb-2 text-[11px] text-rose-200 text-center font-semibold">⚠️ {authError}</div>}
 
-        {authStage === 'fast_login' && (
+       {authStage === 'fast_login' && (
           <div className="space-y-4 px-2">
             <div className="text-center">
+              {/* Restored Profile Selfie Avatar */}
+              <div className="w-16 h-16 mx-auto bg-slate-800 rounded-full flex items-center justify-center mb-3 overflow-hidden border-2 border-emerald-500 shadow-lg shadow-emerald-500/20">
+                <img src={currentUser?.selfieUrl || savedDeviceUser?.selfieUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="Profile" className="w-full h-full object-cover" />
+              </div>
               <h2 className="text-sm font-bold text-emerald-400">Welcome Back</h2>
               <p className="text-xs text-slate-300 font-semibold">{currentUser?.fullName || savedDeviceUser?.fullName}</p>
             </div>
+            
             <form onSubmit={handlePinLogin} className="space-y-3">
               <label className="block text-[10px] text-slate-400 text-center font-bold">ENTER 4-DIGIT QUICK PIN</label>
               <input type="password" maxLength={4} required autoFocus placeholder="••••" value={loginForm.pinInput} onChange={(e) => setLoginForm({ ...loginForm, pinInput: e.target.value })} className="w-36 mx-auto block bg-slate-900 border-2 border-emerald-500 rounded-2xl py-2 text-center text-xl tracking-[0.4em] font-mono text-white outline-none" />
-              <button type="submit" className="w-full bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl text-xs cursor-pointer">Unlock with PIN</button>
+              <button type="submit" className="w-full bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl text-xs cursor-pointer shadow">Unlock with PIN</button>
             </form>
+
+            {/* Restored Biometric / FaceID Divider & Button */}
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink-0 mx-3 text-slate-500 text-[9px] font-bold uppercase tracking-widest">Or</span>
+              <div className="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <button type="button" onClick={handleBiometricLogin} className="w-full bg-slate-900 text-emerald-300 border border-emerald-500/30 font-black py-3 rounded-xl text-xs flex justify-center items-center gap-2 cursor-pointer hover:bg-slate-800 transition shadow-lg">
+              <span className="text-lg">👆</span> Use FaceID / Fingerprint
+            </button>
           </div>
         )}
 
@@ -1228,11 +1244,13 @@ function AppContent() {
         </aside>
 
         <main className="lg:col-span-3 space-y-6">
-          {/* Approvals Tab */}
+         {/* Approvals Tab */}
           {founderTab === 'approvals' && (
             <div className="space-y-6">
+              {/* Merchant Approvals */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
                 <h2 className="text-sm font-bold text-emerald-400">Merchant & Service Provider Onboarding Queue ({pendingMerchants.length})</h2>
+                {pendingMerchants.length === 0 && <p className="text-xs text-slate-400">No pending merchants.</p>}
                 {pendingMerchants.map((pm) => (
                   <div key={pm.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex justify-between items-center text-xs">
                     <div>
@@ -1240,6 +1258,37 @@ function AppContent() {
                       <p className="text-slate-400">Phone: {pm.phone}</p>
                     </div>
                     <button onClick={() => setPendingMerchants(pendingMerchants.filter((m) => m.id !== pm.id))} className="bg-emerald-400 text-slate-950 font-black px-3 py-1.5 rounded-xl cursor-pointer">✓ Approve</button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Product / Catalog Approvals */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+                <h2 className="text-sm font-bold text-emerald-400">Product & Catalog Approvals ({pendingSubCategories.length})</h2>
+                <p className="text-[10px] text-slate-400">Review items added by merchants before they go live on the customer app.</p>
+                {pendingSubCategories.length === 0 && <p className="text-xs text-slate-400">No pending products.</p>}
+                {pendingSubCategories.map((ps) => (
+                  <div key={ps.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex justify-between items-center text-xs gap-3">
+                    <img src={ps.image} alt="Product" className="w-12 h-12 rounded-lg object-cover border border-slate-700" />
+                    <div className="flex-1">
+                      <p className="font-extrabold text-white">{ps.subCategoryBrand}</p>
+                      <p className="text-[10px] text-slate-400">Merchant: {ps.shopName} | Cat: {ps.categoryId.toUpperCase()}</p>
+                      <p className="text-[10px] text-emerald-400 mt-0.5">
+                        Variants: {ps.variants.map(v => `${v.label} (₹${v.price})`).join(', ')}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        // 1. Add it to the live products catalog
+                        setProducts([{ ...ps, status: 'approved' }, ...products]);
+                        // 2. Remove it from the pending queue
+                        setPendingSubCategories(pendingSubCategories.filter((item) => item.id !== ps.id));
+                        alert('✅ Product approved! It is now live on the Customer App.');
+                      }} 
+                      className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black px-3 py-2 rounded-xl cursor-pointer transition shadow"
+                    >
+                      ✓ Approve Item
+                    </button>
                   </div>
                 ))}
               </div>
