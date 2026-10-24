@@ -887,9 +887,53 @@ function AppContent() {
             </div>
           </div>
         )}
+
+        {/* ⭐ RESTORED POST-DELIVERY RATING & REVIEW POPUP */}
+        {orders.some(o => o.status === 'DELIVERED_REVIEW_POPUP') && (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-emerald-500 rounded-3xl max-w-sm w-full p-5 space-y-4 text-xs text-white shadow-2xl shadow-emerald-900/50">
+              <div className="text-center space-y-1.5">
+                <div className="text-4xl animate-bounce pt-2">🎉</div>
+                <h3 className="font-black text-emerald-400 text-sm">Order Delivered Successfully!</h3>
+                <p className="text-[10px] text-slate-400">Your items have safely reached your doorstep.</p>
+              </div>
+              
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center space-y-2">
+                <p className="font-bold text-slate-300">Rate your experience</p>
+                <div className="flex justify-center gap-3 text-3xl cursor-pointer select-none">
+                  <span className="hover:scale-110 transition">⭐</span>
+                  <span className="hover:scale-110 transition">⭐</span>
+                  <span className="hover:scale-110 transition">⭐</span>
+                  <span className="hover:scale-110 transition">⭐</span>
+                  <span className="hover:scale-110 transition">⭐</span>
+                </div>
+              </div>
+
+              <textarea 
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Write a public review for the Merchant & Captain (Optional)..." 
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-[11px] text-white outline-none h-20 placeholder-slate-600 focus:border-emerald-500 transition"
+              />
+
+              <button 
+                onClick={() => {
+                  // Update order status so the popup closes
+                  setOrders(orders.map(o => o.status === 'DELIVERED_REVIEW_POPUP' ? { ...o, status: 'COMPLETED_AND_REVIEWED' } : o));
+                  setReviewText('');
+                  alert('✅ Thank you! Your review helps Adilabad locals make better choices.');
+                }} 
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 rounded-xl cursor-pointer shadow-lg transition"
+              >
+                Submit Feedback & Finish
+              </button>
+            </div>
+          </div>
+        )}
       </MobilePhoneShell>
     );
   };
+  
   // ==========================================================================
   // [SECTION-08] PORTAL 2 — MERCHANT & DECORATOR PARTNER APP UI
   // ==========================================================================
